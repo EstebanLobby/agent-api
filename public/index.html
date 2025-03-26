@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Bot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+        h1 {
+            color: #075E54;
+        }
+        #qr-container {
+            margin-top: 20px;
+        }
+        #qr-img {
+            max-width: 300px;
+            border: 2px solid #25D366;  
+            padding: 10px;
+            border-radius: 10px;
+        }
+        #loading {
+            color: gray;
+            font-size: 18px;
+        }
+        .input-container {
+            margin-top: 20px;
+            display: none; /* Oculto hasta que se conecte */
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #25D366;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #1da851;
+        }
+        .status {
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Escanea el QR para Conectar WhatsApp 📱</h1>
+    <p>Espera unos segundos si no aparece de inmediato.</p>
+
+    <!-- Estado de conexión -->
+    <p class="status" id="estado">⏳ Esperando conexión...</p>
+
+    <!-- QR Code -->
+    <div id="qr-container">
+        <p id="loading">Cargando QR...</p>
+        <img id="qr-img" src="" alt="Código QR" style="display: none;">
+    </div>
+
+    <!-- Formulario para enviar mensaje -->
+    <div class="input-container" id="mensaje-container">
+        <h2>Enviar Mensaje de WhatsApp</h2>
+        <input type="text" id="numero" placeholder="Número (Ej: 5491123456789)" disabled>
+        <br>
+        <input type="text" id="mensaje" placeholder="Escribe tu mensaje" disabled>
+        <br>
+        <button id="enviar-btn" onclick="enviarMensaje()" disabled>Enviar Mensaje</button>
+    </div>
+
+    <p id="response-message"></p>
+
+    <script>
+        async function verificarEstado() {
+            try {
+                const respuesta = await fetch("https://lobbybot-ez87.onrender.com/api/whatsapp/status"); // Cambia la URL si lo tienes en Render
+                const datos = await respuesta.json();
+
+                if (datos.connected) {
+                    document.getElementById("estado").innerText = "✅ WhatsApp conectado";
+                    document.getElementById("qr-container").style.display = "none"; // Ocultar QR
+                    document.getElementById("mensaje-container").style.display = "block"; // Mostrar formulario
+                    document.getElementById("numero").disabled = false;
+                    document.getElementById("mensaje").disabled = false;
+                    document.getElementById("enviar-btn").disabled = false;
+                } else {
+                    document.getElementById("estado").innerText = "⏳ WhatsApp desconectado. Esperando nuevo QR...";
+                    document.getElementById("mensaje-container").style.display = "none"; // Ocultar formulario
+                    obtenerQR();
+                }
+            } catch (error) {
+                document.getElementById("estado").innerText = "❌ Error al verificar el estado.";
+            }
+        }
+
+        async function enviarMensaje() {
+    const numero = document.getElementById("numero").value.trim();
+    const mensaje = document.getElementById("mensaje").value.trim();
+
+    if (!numero || !mensaje) {
+        alert("Por favor, ingresa un número y un mensaje.");
+        return;
+    }/*  */
+
+    try {
+        const respuesta = await fetch("https://lobbybot-ez87.onrender.com/api/whatsapp/send", { // Cambia la URL si lo tienes en Render
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ numero, mensaje })
+        });
+
+        const datos = await respuesta.json();
+        document.getElementById("response-message").innerText = datos.success ? "✅ Mensaje enviado correctamente" : "❌ Error enviando mensaje";
+    } catch (error) {
+        document.getElementById("response-message").innerText = "❌ Error en la solicitud.";
+    }
+}
+
+        async function obtenerQR() {
+            try {
+                const respuesta = await fetch("https://lobbybot-ez87.onrender.com/api/whatsapp/qr");
+                const datos = await respuesta.json();
+
+                if (datos.qr) {
+                    document.getElementById("qr-img").src = datos.qr;
+                    document.getElementById("qr-img").style.display = "block";
+                    document.getElementById("loading").style.display = "none";
+                }
+            } catch (error) {
+                document.getElementById("loading").innerText = "Error obteniendo el QR.";
+            }
+        }
+
+        verificarEstado();
+        setInterval(verificarEstado, 5000);
+    </script>
+
+</body>
+</html>
+
+
+
