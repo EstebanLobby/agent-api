@@ -33,8 +33,16 @@ const connectDBAndStartServer = async () => {
 connectDBAndStartServer();
 
 // 🚀 Configurar middlewares
+const corsOptions = {
+  credentials: true,
+  origin:
+    process.env.NODE_ENV === "production"
+      ? "*" // Ej: https://tudominio.com
+      : "http://localhost:3000", // Desarrollo
+};
+app.use(cors(corsOptions));
+
 app.use(express.json());
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.use(cookieParser());
 
 // 🚀 Configurar Swagger
@@ -68,3 +76,9 @@ require("./src/sockets/chatSocket")(io);
 app.get("/", (req, res) => {
   res.send("API funcionando con WebSockets 🚀");
 });
+
+if (process.env.NODE_ENV === "production") {
+  app.use((err, req, res, next) => {
+    res.status(500).json({ error: "Algo salió mal!" });
+  });
+}
