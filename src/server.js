@@ -21,8 +21,8 @@ const connectDBAndStartServer = async () => {
       console.log("✅ Conectado a MongoDB");
     }
 
-    server.listen(PORT, "0.0.0.0", () => {
-      console.log(`🔥 Servidor corriendo en http://localhost:${PORT}`);
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on port ${PORT}`);
     });
   } catch (error) {
     console.error("❌ Error al conectar con MongoDB:", error);
@@ -33,14 +33,13 @@ const connectDBAndStartServer = async () => {
 connectDBAndStartServer();
 
 // 🚀 Configurar middlewares
-const corsOptions = {
-  credentials: true,
-  origin:
-    process.env.NODE_ENV === "production"
-      ? "*" // Ej: https://tudominio.com
-      : "http://localhost:3000", // Desarrollo
-};
-app.use(cors(corsOptions));
+app.use(
+  cors({
+    origin: "*", // Permite todos los orígenes
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Métodos permitidos
+    allowedHeaders: ["Content-Type", "Authorization"], // Headers permitidos
+  })
+);
 
 app.use(express.json());
 app.use(cookieParser());
