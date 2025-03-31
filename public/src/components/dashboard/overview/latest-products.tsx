@@ -37,7 +37,11 @@ export function LatestProducts({ products = [], sx }: LatestProductsProps): Reac
           <ListItem divider={index < products.length - 1} key={product.id}>
             <ListItemAvatar>
               {product.image ? (
-                <Box component="img" src={product.image} sx={{ borderRadius: 1, height: '48px', width: '48px' }} />
+                <Box
+                  component="img"
+                  src={product.image}
+                  sx={{ borderRadius: 1, height: '48px', width: '48px' }}
+                />
               ) : (
                 <Box
                   sx={{

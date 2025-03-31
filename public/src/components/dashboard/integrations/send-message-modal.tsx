@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Button, CircularProgress, Modal, TextField, Typography } from '@mui/material';
 
-import { whatsappClient } from '@/lib/whatsappApi/whatsappApi';
+import { whatsappClient } from '@/lib/whatsappApi/whatsapp-api';
 
 interface SendMessageModalProps {
   open: boolean;
@@ -9,7 +9,7 @@ interface SendMessageModalProps {
   initialNumber?: string;
 }
 
-export const SendMessageModal: React.FC<SendMessageModalProps> = ({ open, onClose, initialNumber = '' }) => {
+export function SendMessageModal({ open, onClose, initialNumber = '' }: SendMessageModalProps) {
   const [numero, setNumero] = useState(initialNumber);
   const [mensaje, setMensaje] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,13 +26,11 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({ open, onClos
 
     try {
       const response = await whatsappClient.sendMessage({
-        numero,
-        destino: numero, // Asumiendo que destino es el mismo número en este caso
+        destino: numero,
         mensaje,
       });
 
       if (response.success) {
-        console.log(`Mensaje enviado con éxito a ${numero}`);
         setMensaje('');
         onClose();
       } else {
@@ -83,11 +81,11 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({ open, onClos
             setMensaje(e.target.value);
           }}
         />
-        {error && (
+        {error ? (
           <Typography variant="body2" color="error" sx={{ mt: 1 }}>
             {error}
           </Typography>
-        )}
+        ) : null}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
           <Button variant="outlined" onClick={onClose} disabled={loading}>
             Cancelar
@@ -99,4 +97,4 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({ open, onClos
       </Box>
     </Modal>
   );
-};
+}

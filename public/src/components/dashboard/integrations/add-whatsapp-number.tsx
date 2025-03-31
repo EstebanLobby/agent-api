@@ -1,16 +1,17 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
+import {
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+} from '@mui/material';
 import { io } from 'socket.io-client';
 
-
-
-import { whatsappClient } from '@/lib/whatsappApi/whatsappApi';
-
-
-
-
+import { whatsappClient } from '@/lib/whatsappApi/whatsapp-api';
 
 interface AddWhatsAppNumberProps {
   open: boolean;
@@ -26,7 +27,7 @@ export function AddWhatsAppNumber({ open, onClose }: AddWhatsAppNumberProps) {
     if (!open) {
       setQrCode(null);
       setError(null);
-      return;
+      return undefined; // Explícitamente devuelve undefined
     }
 
     setLoading(true);
@@ -36,17 +37,13 @@ export function AddWhatsAppNumber({ open, onClose }: AddWhatsAppNumberProps) {
       .startSession()
       .then((response) => {
         if (response.error) {
-          console.error('❌ Error al iniciar sesión:', response.error);
           setError('Error al iniciar sesión. Intenta nuevamente.');
           setLoading(false);
-        } else {
-          console.log('✅ Sesión iniciada correctamente.');
         }
       })
-      .catch((err) => {
-        console.error('❌ Error en la petición a /whatsapp/start:', err);
-        setError('Error iniciando sesión.');
-        setLoading(false);
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : 'Error desconocido';
+        setError(`Error: ${message}`);
       });
 
     // 🔹 Conectar al WebSocket
@@ -55,28 +52,22 @@ export function AddWhatsAppNumber({ open, onClose }: AddWhatsAppNumberProps) {
       withCredentials: true,
     });
 
-    socket.on('connect', () => {
-      console.log('🔗 Conectado a WebSocket.');
-    });
+    socket.on('connect', () => {});
 
     socket.on('qr_update', (qrBase64) => {
-      console.log('📡 QR recibido:', qrBase64);
       setQrCode(qrBase64);
       setLoading(false);
       setError(null);
     });
 
     socket.on('whatsapp_connected', () => {
-      console.log('✅ Cliente de WhatsApp conectado. Cerrando modal...');
       setQrCode(null);
       setLoading(false);
       onClose(); // 🔹 Cierra el modal automáticamente
     });
 
-    socket.on('qr_error', (err) => {
-      console.error('❌ Error al recibir QR:', err);
-      setError('Error al generar QR. Intenta nuevamente.');
-      setLoading(false);
+    socket.on('qr_error', (err: { message?: string }) => {
+      setError(err.message || 'Error al generar QR');
     });
 
     return () => {
@@ -87,7 +78,9 @@ export function AddWhatsAppNumber({ open, onClose }: AddWhatsAppNumberProps) {
   return (
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>Añadir Nueva Integración</DialogTitle>
-      <DialogContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+      <DialogContent
+        sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}
+      >
         <p>Escanea este código QR para vincular WhatsApp:</p>
 
         {loading ? (

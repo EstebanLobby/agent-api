@@ -40,7 +40,11 @@ export default function Page(): React.JSX.Element {
         />
       </Grid>
       <Grid lg={4} md={6} xs={12}>
-        <Traffic chartSeries={[63, 15, 22]} labels={['Desktop', 'Tablet', 'Phone']} sx={{ height: '100%' }} />
+        <Traffic
+          chartSeries={[63, 15, 22]}
+          labels={['Desktop', 'Tablet', 'Phone']}
+          sx={{ height: '100%' }}
+        />
       </Grid>
       <Grid lg={4} md={6} xs={12}>
         <LatestProducts
@@ -102,7 +106,7 @@ export default function Page(): React.JSX.Element {
               amount: 10.99,
               status: 'refunded',
               createdAt: dayjs().subtract(10, 'minutes').toDate(),
-            }
+            },
           ]}
           sx={{ height: '100%' }}
         />

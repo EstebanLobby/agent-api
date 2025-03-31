@@ -16,15 +16,11 @@ import { ArrowClockwise as ReloadIcon } from '@phosphor-icons/react/dist/ssr/Arr
 import { DotsThreeVertical as DotsThreeVerticalIcon } from '@phosphor-icons/react/dist/ssr/DotsThreeVertical';
 import { Plus as PlusIcon } from '@phosphor-icons/react/dist/ssr/Plus';
 
-
-
-import { whatsappClient } from '@/lib/whatsappApi/whatsappApi';
-
-
+import { whatsappClient } from '@/lib/whatsappApi/whatsapp-api';
 
 import { AddWhatsAppNumber } from './add-whatsapp-number';
 import { SendMessageModal } from './send-message-modal';
-
+import { logger } from '@/lib/default-logger';
 
 const statusMap = {
   pending: { label: 'pending', color: 'warning' },
@@ -47,16 +43,11 @@ export function BoardIntegrations({ sx }: { sx?: any }): React.JSX.Element {
   const [selectedIntegration, setSelectedIntegration] = useState<Order | null>(null);
   const [messageModalOpen, setMessageModalOpen] = useState(false);
 
-  useEffect(() => {
-    fetchIntegrations();
-  }, []);
-
   const fetchIntegrations = async () => {
     setLoading(true);
     try {
       const response = await whatsappClient.getSessions();
       const sessions = response.sessions || [];
-      console.log(sessions);
 
       const updatedSessions = sessions.map((session: any) => ({
         _id: session._id,
@@ -66,10 +57,14 @@ export function BoardIntegrations({ sx }: { sx?: any }): React.JSX.Element {
       }));
       setIntegrations(updatedSessions);
     } catch (error) {
-      console.error('Error fetching integrations:', error);
+      logger.error('Error fetching integrations:', error);
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+    fetchIntegrations();
+  }, []);
 
   const hanldeClosed = () => {
     setOpen(false);
@@ -88,7 +83,6 @@ export function BoardIntegrations({ sx }: { sx?: any }): React.JSX.Element {
 
   const handleDisconnect = () => {
     if (selectedIntegration) {
-      console.log(`Desconectando ${selectedIntegration.numero}`);
       // Aquí podrías llamar a una función para desconectar el número.
     }
     handleMenuClose();
@@ -141,12 +135,15 @@ export function BoardIntegrations({ sx }: { sx?: any }): React.JSX.Element {
               <TableCell>Fecha</TableCell>
               <TableCell>Numero</TableCell>
               <TableCell>Estado</TableCell>
-              <TableCell></TableCell>
+              <TableCell />
             </TableRow>
           </TableHead>
           <TableBody>
             {integrations.map((value) => {
-              const { label, color } = statusMap[value.status] ?? { label: 'Unknown', color: 'default' };
+              const { label, color } = statusMap[value.status] ?? {
+                label: 'Unknown',
+                color: 'default',
+              };
               return (
                 <TableRow hover key={value._id}>
                   <TableCell>{value.createdAt}</TableCell>

@@ -6,10 +6,17 @@ module.exports = {
   root: true,
   extends: [
     require.resolve('@vercel/style-guide/eslint/node'),
-    require.resolve('@vercel/style-guide/eslint/typescript'),
     require.resolve('@vercel/style-guide/eslint/browser'),
     require.resolve('@vercel/style-guide/eslint/react'),
     require.resolve('@vercel/style-guide/eslint/next'),
+    'airbnb',
+    'airbnb-typescript',
+    'airbnb/hooks',
+    'plugin:prettier/recommended',
+    'next/core-web-vitals',
+    'plugin:import/recommended',
+    'plugin:import/typescript',
+    'prettier',
   ],
   parserOptions: {
     project,
@@ -21,7 +28,21 @@ module.exports = {
       },
     },
   },
+  plugins: ['prettier', 'import'],
   rules: {
+    // ========== Reglas base ==========
+    'import/newline-after-import': ['error', { count: 1 }],
+    'unicorn/filename-case': [
+      'error',
+      {
+        cases: {
+          kebabCase: true,
+          pascalCase: true,
+        },
+      },
+    ],
+
+    // ========== TypeScript ==========
     '@typescript-eslint/no-unused-vars': [
       'error',
       {
@@ -43,40 +64,87 @@ module.exports = {
         ignoreOnInitialization: true,
       },
     ],
-    'import/newline-after-import': 'error',
-    'react/jsx-uses-react': 'error',
-    'react/react-in-jsx-scope': 'error',
-    'unicorn/filename-case': [
-      'error',
-      {
-        cases: {
-          kebabCase: true, // personal style
-          pascalCase: true,
-        },
-      },
-    ],
-
-    // Deactivated
-    '@typescript-eslint/dot-notation': 'off', // paths are used with a dot notation
-    '@typescript-eslint/no-misused-promises': 'off', // onClick with async fails
-    '@typescript-eslint/no-non-null-assertion': 'off', // sometimes compiler is unable to detect
-    '@typescript-eslint/no-unnecessary-condition': 'off', // remove when no static data is used
-    '@typescript-eslint/require-await': 'off', // Server Actions require async flag always
-    '@typescript-eslint/prefer-nullish-coalescing': 'off', // personal style
     '@typescript-eslint/restrict-template-expressions': [
       'error',
       {
         allowNumber: true,
       },
     ],
-    'import/no-default-export': 'off', // Next.js components must be exported as default
-    'import/no-extraneous-dependencies': 'off', // conflict with sort-imports plugin
-    'import/order': 'off', // using custom sort plugin
-    'no-nested-ternary': 'off', // personal style
-    'no-redeclare': 'off', // conflict with TypeScript function overloads
-    'react/jsx-fragments': 'off', // personal style
-    'react/prop-types': 'off', // TypeScript is used for type checking
 
-    '@next/next/no-img-element': 'off', // Temporary disabled
+    // ========== React/Next.js ==========
+    'react/jsx-filename-extension': [1, { extensions: ['.tsx', '.jsx'] }],
+    'react/function-component-definition': [
+      'error',
+      {
+        namedComponents: 'function-declaration',
+        unnamedComponents: 'arrow-function',
+      },
+    ],
+    'react/react-in-jsx-scope': 'off',
+    'react/jsx-props-no-spreading': 'off',
+    'react/require-default-props': 'off',
+    'react/prop-types': 'off',
+
+    // ========== Import/Export ==========
+    'import/prefer-default-export': 'off',
+    'import/no-extraneous-dependencies': [
+      'error',
+      {
+        devDependencies: true,
+        peerDependencies: true,
+      },
+    ],
+
+    // ========== Métodos de Clase ==========
+    'class-methods-use-this': 'off',
+
+    // ========== Prettier ==========
+    'prettier/prettier': [
+      'error',
+      {
+        endOfLine: 'auto',
+      },
+      {
+        usePrettierrc: true,
+      },
+    ],
+
+    // ========== Reglas desactivadas ==========
+    '@typescript-eslint/dot-notation': 'off',
+    '@typescript-eslint/no-misused-promises': 'off',
+    '@typescript-eslint/no-non-null-assertion': 'off',
+    '@typescript-eslint/no-unnecessary-condition': 'off',
+    '@typescript-eslint/require-await': 'off',
+    '@typescript-eslint/prefer-nullish-coalescing': 'off',
+    'import/no-default-export': 'off',
+    'import/order': 'off',
+    'no-nested-ternary': 'off',
+    'no-redeclare': 'off',
+    'react/jsx-fragments': 'off',
+    '@next/next/no-img-element': 'off',
+    'react/no-danger': 'off',
+    // ========== Reglas personalizadas ==========
+    'no-underscore-dangle': [
+      'error',
+      {
+        allow: ['_id'], // Permite _id (común en MongoDB)
+        allowAfterThis: true,
+      },
+    ],
+    'react/no-danger': [
+      'error',
+      {
+        allow: [
+          {
+            name: 'dangerouslySetInnerHTML',
+            message: 'Emotion CSS-in-JS requiere dangerouslySetInnerHTML para estilos SSR',
+            URLs: [
+              'https://emotion.sh/docs/ssr',
+              'https://nextjs.org/docs/app/building-your-application/styling/css-in-js#emotion',
+            ],
+          },
+        ],
+      },
+    ],
   },
 };

@@ -16,7 +16,27 @@ import type { ApexOptions } from 'apexcharts';
 
 import { Chart } from '@/components/core/chart';
 
-const iconMapping = { Desktop: DesktopIcon, Tablet: DeviceTabletIcon, Phone: PhoneIcon } as Record<string, Icon>;
+function useChartOptions(labels: string[]): ApexOptions {
+  const theme = useTheme();
+
+  return {
+    chart: { background: 'transparent' },
+    colors: [theme.palette.primary.main, theme.palette.success.main, theme.palette.warning.main],
+    dataLabels: { enabled: false },
+    labels,
+    legend: { show: false },
+    plotOptions: { pie: { expandOnClick: false } },
+    states: { active: { filter: { type: 'none' } }, hover: { filter: { type: 'none' } } },
+    stroke: { width: 0 },
+    theme: { mode: theme.palette.mode },
+    tooltip: { fillSeriesColor: false },
+  };
+}
+
+const iconMapping = { Desktop: DesktopIcon, Tablet: DeviceTabletIcon, Phone: PhoneIcon } as Record<
+  string,
+  Icon
+>;
 
 export interface TrafficProps {
   chartSeries: number[];
@@ -32,8 +52,18 @@ export function Traffic({ chartSeries, labels, sx }: TrafficProps): React.JSX.El
       <CardHeader title="Traffic source" />
       <CardContent>
         <Stack spacing={2}>
-          <Chart height={300} options={chartOptions} series={chartSeries} type="donut" width="100%" />
-          <Stack direction="row" spacing={2} sx={{ alignItems: 'center', justifyContent: 'center' }}>
+          <Chart
+            height={300}
+            options={chartOptions}
+            series={chartSeries}
+            type="donut"
+            width="100%"
+          />
+          <Stack
+            direction="row"
+            spacing={2}
+            sx={{ alignItems: 'center', justifyContent: 'center' }}
+          >
             {chartSeries.map((item, index) => {
               const label = labels[index];
               const Icon = iconMapping[label];
@@ -53,21 +83,4 @@ export function Traffic({ chartSeries, labels, sx }: TrafficProps): React.JSX.El
       </CardContent>
     </Card>
   );
-}
-
-function useChartOptions(labels: string[]): ApexOptions {
-  const theme = useTheme();
-
-  return {
-    chart: { background: 'transparent' },
-    colors: [theme.palette.primary.main, theme.palette.success.main, theme.palette.warning.main],
-    dataLabels: { enabled: false },
-    labels,
-    legend: { show: false },
-    plotOptions: { pie: { expandOnClick: false } },
-    states: { active: { filter: { type: 'none' } }, hover: { filter: { type: 'none' } } },
-    stroke: { width: 0 },
-    theme: { mode: theme.palette.mode },
-    tooltip: { fillSeriesColor: false },
-  };
 }

@@ -23,6 +23,16 @@ export interface ResetPasswordParams {
   email: string;
 }
 
+interface AuthResponse {
+  token: string;
+  user: User;
+}
+
+interface ApiResponse<T> {
+  data: T;
+  error?: string;
+}
+
 class AuthClient {
   async signUp(params: SignUpParams): Promise<{ error?: string }> {
     try {
@@ -37,9 +47,11 @@ class AuthClient {
     return { error: 'Autenticación social no implementada' };
   }
 
-  async signInWithPassword(params: SignInWithPasswordParams): Promise<{ data?: User; error?: string }> {
+  async signInWithPassword(
+    params: SignInWithPasswordParams,
+  ): Promise<{ data?: User; error?: string }> {
     try {
-      const { data } = await api.post('/auth/login', params);
+      const { data } = await api.post<AuthResponse>('/auth/login', params);
       localStorage.setItem('custom-auth-token', data.token);
       // Aquí devuelves directamente el usuario
       return { data: data.user };
@@ -59,8 +71,8 @@ class AuthClient {
 
   async getUser(): Promise<{ data?: User | null; error?: string }> {
     try {
-      const { data } = await api.get('/auth/me');
-      return { data };
+      const response = await api.get<ApiResponse<User | null>>('/auth/me');
+      return { data: response.data.data };
     } catch (error: any) {
       return { data: null, error: 'No autenticado' };
     }

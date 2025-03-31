@@ -2,7 +2,13 @@
 
 // NOTE: A tracking system such as Sentry should replace the console
 
-export const LogLevel = { NONE: 'NONE', ERROR: 'ERROR', WARN: 'WARN', DEBUG: 'DEBUG', ALL: 'ALL' } as const;
+export const LogLevel = {
+  NONE: 'NONE',
+  ERROR: 'ERROR',
+  WARN: 'WARN',
+  DEBUG: 'DEBUG',
+  ALL: 'ALL',
+} as const;
 
 const LogLevelNumber = { NONE: 0, ERROR: 1, WARN: 2, DEBUG: 3, ALL: 4 } as const;
 
@@ -14,7 +20,9 @@ export interface LoggerOptions {
 
 export class Logger {
   protected prefix: string;
+
   protected level: keyof typeof LogLevel;
+
   protected showLevel: boolean;
 
   private levelNumber: number;
@@ -49,7 +57,7 @@ export class Logger {
   }
 
   private write(level: keyof typeof LogLevel, ...args: unknown[]): void {
-    let prefix = this.prefix;
+    let { prefix } = this;
 
     if (this.showLevel) {
       prefix = `- ${level} ${prefix}`;

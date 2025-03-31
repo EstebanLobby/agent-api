@@ -42,7 +42,11 @@ export function IntegrationCard({ integration }: IntegrationCardProps): React.JS
         </Stack>
       </CardContent>
       <Divider />
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center', justifyContent: 'space-between', p: 2 }}>
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{ alignItems: 'center', justifyContent: 'space-between', p: 2 }}
+      >
         <Stack sx={{ alignItems: 'center' }} direction="row" spacing={1}>
           <ClockIcon fontSize="var(--icon-fontSize-sm)" />
           <Typography color="text.secondary" display="inline" variant="body2">

@@ -2,10 +2,7 @@
 
 import React, { useState } from 'react';
 import { Box, Button, CircularProgress, Modal, TextField, Typography } from '@mui/material';
-import Card from '@mui/material/Card';
-import InputAdornment from '@mui/material/InputAdornment';
-import OutlinedInput from '@mui/material/OutlinedInput';
-import { MagnifyingGlass as MagnifyingGlassIcon } from '@phosphor-icons/react/dist/ssr/MagnifyingGlass';
+import { logger } from '@/lib/default-logger';
 
 const modalStyle = {
   position: 'absolute',
@@ -28,19 +25,19 @@ export function WhatsAppModal(): React.JSX.Element {
 
   const obtenerQR = async (num: string) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/whatsapp/qr/${num}`);
+      const res = await fetch(`https://agent-api-5ljd.onrender.com/api/whatsapp/qr/${num}`);
       const data = await res.json();
       if (data.qr) {
         setQrs((prev) => ({ ...prev, [num]: data.qr }));
       }
     } catch (error) {
-      console.error('Error obteniendo QR:', error);
+      logger.error('Error obteniendo QR:', error); // <- Usa el logger
     }
   };
 
   const verificarEstado = async (num: string) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/whatsapp/status/${num}`);
+      const res = await fetch(`https://agent-api-5ljd.onrender.com/api/whatsapp/status/${num}`);
       const data = await res.json();
       setConnectedNumbers((prev) => ({ ...prev, [num]: data.connected }));
 
@@ -54,7 +51,7 @@ export function WhatsAppModal(): React.JSX.Element {
 
   const iniciarSesion = async () => {
     setLoading(true);
-    await fetch('http://localhost:3001/api/whatsapp/start', {
+    await fetch('https://agent-api-5ljd.onrender.com/api/whatsapp/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ numero }),
@@ -64,7 +61,7 @@ export function WhatsAppModal(): React.JSX.Element {
   };
 
   return (
-    <Modal open={true}>
+    <Modal open>
       <Box sx={modalStyle}>
         <Typography variant="h5">Conectar múltiples WhatsApp 📱</Typography>
 
@@ -78,7 +75,13 @@ export function WhatsAppModal(): React.JSX.Element {
             setNumero(e.target.value);
           }}
         />
-        <Button fullWidth variant="contained" color="primary" onClick={iniciarSesion} disabled={loading}>
+        <Button
+          fullWidth
+          variant="contained"
+          color="primary"
+          onClick={iniciarSesion}
+          disabled={loading}
+        >
           {loading ? <CircularProgress size={24} /> : 'Iniciar Sesión'}
         </Button>
 
@@ -88,7 +91,9 @@ export function WhatsAppModal(): React.JSX.Element {
               <Typography variant="body1">
                 {connectedNumbers[num] ? `✅ Conectado: ${num}` : `⏳ Conectando: ${num}`}
               </Typography>
-              {!connectedNumbers[num] && qrs[num] && <img src={qrs[num]} alt="QR" style={{ maxWidth: '100%' }} />}
+              {!connectedNumbers[num] && qrs[num] ? (
+                <img src={qrs[num]} alt="QR" style={{ maxWidth: '100%' }} />
+              ) : null}
             </Box>
           ))}
         </Box>

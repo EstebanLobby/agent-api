@@ -14,7 +14,10 @@ export const metadata = { title: `Not found | ${config.site.name}` } satisfies M
 
 export default function NotFound(): React.JSX.Element {
   return (
-    <Box component="main" sx={{ alignItems: 'center', display: 'flex', justifyContent: 'center', minHeight: '100%' }}>
+    <Box
+      component="main"
+      sx={{ alignItems: 'center', display: 'flex', justifyContent: 'center', minHeight: '100%' }}
+    >
       <Stack spacing={3} sx={{ alignItems: 'center', maxWidth: 'md' }}>
         <Box>
           <Box
@@ -28,7 +31,8 @@ export default function NotFound(): React.JSX.Element {
           404: The page you are looking for isn&apos;t here
         </Typography>
         <Typography color="text.secondary" variant="body1" sx={{ textAlign: 'center' }}>
-          You either tried some shady route or you came here by mistake. Whichever it is, try using the navigation
+          You either tried some shady route or you came here by mistake. Whichever it is, try using
+          the navigation
         </Typography>
         <Button
           component={RouterLink}

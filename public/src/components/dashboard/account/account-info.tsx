@@ -11,8 +11,6 @@ import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
-
-
 import { useUser } from '@/hooks/use-user';
 
 export function AccountInfo(): React.JSX.Element {
@@ -45,7 +43,11 @@ export function AccountInfo(): React.JSX.Element {
     <Card>
       <CardContent>
         <Stack spacing={2} sx={{ alignItems: 'center' }}>
-          <Avatar src={user.avatar || '/assets/avatar.png'} alt={user.name} sx={{ height: 80, width: 80 }} />
+          <Avatar
+            src={user.avatar || '/assets/avatar.png'}
+            alt={user.name}
+            sx={{ height: 80, width: 80 }}
+          />
           <Stack spacing={1} sx={{ textAlign: 'center' }}>
             <Typography variant="h5">{user.name}</Typography>
             {user.jobTitle ? (

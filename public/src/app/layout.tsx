@@ -1,11 +1,6 @@
 import * as React from 'react';
 import type { Viewport } from 'next';
 
-
-
-
-
-
 import '@/styles/global.css';
 
 import { LocalizationProvider } from '@/components/core/localization-provider';

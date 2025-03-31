@@ -7,11 +7,14 @@
 
 # testing
 /coverage
+.prettierrc
+.eslintrc.js
 
 # production
 /build
 out
 .next
+
 
 # misc
 .DS_Store

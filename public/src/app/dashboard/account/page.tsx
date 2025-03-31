@@ -3,9 +3,6 @@ import type { Metadata } from 'next';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Unstable_Grid2';
-
-
-
 import { config } from '@/config';
 import { AccountDetailsForm } from '@/components/dashboard/account/account-details-form';
 import { AccountInfo } from '@/components/dashboard/account/account-info';

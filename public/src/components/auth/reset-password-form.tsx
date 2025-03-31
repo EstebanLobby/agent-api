@@ -47,7 +47,7 @@ export function ResetPasswordForm(): React.JSX.Element {
 
       // Redirect to confirm password reset
     },
-    [setError]
+    [setError],
   );
 
   return (

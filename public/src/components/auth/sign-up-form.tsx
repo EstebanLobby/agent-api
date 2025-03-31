@@ -20,7 +20,6 @@ import { z as zod } from 'zod';
 
 import { paths } from '@/paths';
 import { authClient } from '@/lib/auth/client';
-import { useUser } from '@/hooks/use-user';
 
 const schema = zod.object({
   firstName: zod.string().min(1, { message: 'First name is required' }),
@@ -32,12 +31,16 @@ const schema = zod.object({
 
 type Values = zod.infer<typeof schema>;
 
-const defaultValues = { firstName: '', lastName: '', email: '', password: '', terms: false } satisfies Values;
+const defaultValues = {
+  firstName: '',
+  lastName: '',
+  email: '',
+  password: '',
+  terms: false,
+} satisfies Values;
 
 export function SignUpForm(): React.JSX.Element {
   const router = useRouter();
-
-  const { checkSession } = useUser();
 
   const [isPending, setIsPending] = React.useState<boolean>(false);
 
@@ -59,15 +62,9 @@ export function SignUpForm(): React.JSX.Element {
         setIsPending(false);
         return;
       }
-
-      // Refresh the auth state
-      await checkSession?.();
-
-      // UserProvider, for this case, will not refresh the router
-      // After refresh, GuestGuard will handle the redirect
       router.refresh();
     },
-    [checkSession, router, setError]
+    [router, setError],
   );
 
   return (
@@ -76,7 +73,12 @@ export function SignUpForm(): React.JSX.Element {
         <Typography variant="h4">Sign up</Typography>
         <Typography color="text.secondary" variant="body2">
           Already have an account?{' '}
-          <Link component={RouterLink} href={paths.auth.signIn} underline="hover" variant="subtitle2">
+          <Link
+            component={RouterLink}
+            href={paths.auth.signIn}
+            underline="hover"
+            variant="subtitle2"
+          >
             Sign in
           </Link>
         </Typography>
@@ -90,7 +92,9 @@ export function SignUpForm(): React.JSX.Element {
               <FormControl error={Boolean(errors.firstName)}>
                 <InputLabel>First name</InputLabel>
                 <OutlinedInput {...field} label="First name" />
-                {errors.firstName ? <FormHelperText>{errors.firstName.message}</FormHelperText> : null}
+                {errors.firstName ? (
+                  <FormHelperText>{errors.firstName.message}</FormHelperText>
+                ) : null}
               </FormControl>
             )}
           />
@@ -101,7 +105,9 @@ export function SignUpForm(): React.JSX.Element {
               <FormControl error={Boolean(errors.firstName)}>
                 <InputLabel>Last name</InputLabel>
                 <OutlinedInput {...field} label="Last name" />
-                {errors.firstName ? <FormHelperText>{errors.firstName.message}</FormHelperText> : null}
+                {errors.firstName ? (
+                  <FormHelperText>{errors.firstName.message}</FormHelperText>
+                ) : null}
               </FormControl>
             )}
           />
@@ -123,7 +129,9 @@ export function SignUpForm(): React.JSX.Element {
               <FormControl error={Boolean(errors.password)}>
                 <InputLabel>Password</InputLabel>
                 <OutlinedInput {...field} label="Password" type="password" />
-                {errors.password ? <FormHelperText>{errors.password.message}</FormHelperText> : null}
+                {errors.password ? (
+                  <FormHelperText>{errors.password.message}</FormHelperText>
+                ) : null}
               </FormControl>
             )}
           />
@@ -134,13 +142,11 @@ export function SignUpForm(): React.JSX.Element {
               <div>
                 <FormControlLabel
                   control={<Checkbox {...field} />}
-                  label={
-                    <React.Fragment>
-                      I have read the <Link>terms and conditions</Link>
-                    </React.Fragment>
-                  }
+                  label="I have read the terms and conditions"
                 />
-                {errors.terms ? <FormHelperText error>{errors.terms.message}</FormHelperText> : null}
+                {errors.terms ? (
+                  <FormHelperText error>{errors.terms.message}</FormHelperText>
+                ) : null}
               </div>
             )}
           />

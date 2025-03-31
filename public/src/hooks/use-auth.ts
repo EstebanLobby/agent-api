@@ -1,12 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-
-
 import { authClient } from '@/lib/auth/client';
-
-
-
-
 
 // Hook para obtener el usuario autenticado
 export function useFetchUser() {
@@ -18,11 +12,8 @@ export function useFetchUser() {
     },
     // Para debug: siempre consulta
     staleTime: 0,
-    cacheTime: 0, // también evita que guarde el resultado por más tiempo
+    gcTime: 0, // también evita que guarde el resultado por más tiempo
     retry: false,
-    onError: (error) => {
-      console.error('❌ Error en getUser:', error);
-    },
   });
 }
 
@@ -57,7 +48,12 @@ export function useLogout() {
 // Hook para registrarse
 export function useSignUp() {
   return useMutation({
-    mutationFn: async (params: { firstName: string; lastName: string; email: string; password: string }) => {
+    mutationFn: async (params: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      password: string;
+    }) => {
       return authClient.signUp(params);
     },
   });

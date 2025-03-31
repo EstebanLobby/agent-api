@@ -1,8 +1,15 @@
-import React from 'react';
-import SwaggerUI from 'swagger-ui-react';
-
+import dynamic from 'next/dynamic';
 import 'swagger-ui-react/swagger-ui.css';
 
-export default function Page(): React.JSX.Element {
-  return <SwaggerUI url="http://localhost:5000/api-docs.json" />;
+const SwaggerUI = dynamic(() => import('swagger-ui-react'), {
+  ssr: false, // Esto desactiva el renderizado en servidor
+  loading: () => <p>Cargando documentación API...</p>,
+});
+
+export default function Page() {
+  return (
+    <div className="p-4">
+      <SwaggerUI url="https://agent-api-5ljd.onrender.com/api-docs.json" docExpansion="list" />
+    </div>
+  );
 }
