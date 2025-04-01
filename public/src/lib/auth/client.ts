@@ -51,12 +51,31 @@ class AuthClient {
     params: SignInWithPasswordParams,
   ): Promise<{ data?: User; error?: string }> {
     try {
-      const { data } = await api.post<AuthResponse>('/auth/login', params);
+      const { data } = await api.post<AuthResponse>('/auth/login', params, {
+        headers: {
+          'Content-Type': 'application/json', // Asegura el header
+        },
+      });
+
       localStorage.setItem('custom-auth-token', data.token);
-      // Aquí devuelves directamente el usuario
       return { data: data.user };
     } catch (error: any) {
-      return { error: error.response?.data?.message || 'Credenciales inválidas' };
+      console.error('Error en login:', error);
+
+      // Mejor manejo de errores
+      if (error.response) {
+        // El servidor respondió con un status fuera de 2xx
+        return {
+          error:
+            error.response.data?.message || error.response.statusText || 'Error de autenticación',
+        };
+      }
+      if (error.request) {
+        // La solicitud fue hecha pero no hubo respuesta
+        return { error: 'No se recibió respuesta del servidor' };
+      }
+      // Error al configurar la solicitud
+      return { error: 'Error al configurar la solicitud' };
     }
   }
 
@@ -72,7 +91,7 @@ class AuthClient {
   async getUser(): Promise<{ data?: User | null; error?: string }> {
     try {
       const response = await api.get<ApiResponse<User | null>>('/auth/me');
-      return { data: response.data.data };
+      return { data: response.data };
     } catch (error: any) {
       return { data: null, error: 'No autenticado' };
     }

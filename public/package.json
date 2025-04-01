@@ -1,9 +1,9 @@
 {
-  "name": "material-kit-react",
-  "version": "4.0.0",
-  "author": "Devias",
+  "name": "agent-api",
+  "version": "1.0.0",
+  "author": "Esteban Villalba",
   "licence": "MIT",
-  "homepage": "https://devias.io",
+  "homepage": "",
   "private": false,
   "scripts": {
     "dev": "next dev",

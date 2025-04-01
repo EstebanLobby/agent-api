@@ -3,7 +3,7 @@ import axios from 'axios'; // ✅ Agregá esto arriba del todo
 export const api = axios.create({
   baseURL: 'https://agent-api-5ljd.onrender.com/api',
   headers: { 'Content-Type': 'application/json' },
-  withCredentials: true,
+  withCredentials: false,
 });
 
 // Interceptor seguro para TypeScript
