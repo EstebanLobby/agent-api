@@ -9,7 +9,7 @@ const SwaggerUI = dynamic(() => import('swagger-ui-react'), {
 export default function Page() {
   return (
     <div className="p-4">
-      <SwaggerUI url="https://agent-api-5ljd.onrender.com/api-docs.json" docExpansion="list" />
+      <SwaggerUI url="https://checkia.lobby-digital.com/apiapi-docs.json" docExpansion="list" />
     </div>
   );
 }

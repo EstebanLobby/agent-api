@@ -1,7 +1,7 @@
 import axios from 'axios'; // ✅ Agregá esto arriba del todo
 
 export const api = axios.create({
-  baseURL: 'https://agent-api-5ljd.onrender.com/api',
+  baseURL: 'https://checkia.lobby-digital.com/api',
   headers: { 'Content-Type': 'application/json' },
   withCredentials: false,
 });

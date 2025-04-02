@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Prueba Socket.io</title>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+  </head>
+  <body>
+    <h1>Test Socket.io</h1>
+    <script>
+      const socket = io('https://agent-api-5ljd.onrender.com', {
+        path: '/socket.io',
+        transports: ['websocket'],
+      });
+
+      socket.on('connect', () => console.log('✅ Conectado a Socket.io'));
+      socket.on('connect_error', (err) => console.error('❌ Error conexión', err));
+      socket.on('qr_update', (data) => console.log('📱 QR recibido:', data));
+      socket.on('qr_error', (err) => console.log('❌ Error QR:', err));
+      socket.on('whatsapp_connected', (data) => console.log('🟢 WhatsApp conectado:', data));
+    </script>
+  </body>
+</html>

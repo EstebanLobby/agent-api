@@ -27,12 +27,11 @@ export function AddWhatsAppNumber({ open, onClose }: AddWhatsAppNumberProps) {
     if (!open) {
       setQrCode(null);
       setError(null);
-      return undefined; // Explícitamente devuelve undefined
+      return undefined;
     }
 
     setLoading(true);
 
-    // 🔹 Llamar a `/whatsapp/start` automáticamente al abrir el modal
     whatsappClient
       .startSession()
       .then((response) => {
@@ -44,15 +43,19 @@ export function AddWhatsAppNumber({ open, onClose }: AddWhatsAppNumberProps) {
       .catch((err: unknown) => {
         const message = err instanceof Error ? err.message : 'Error desconocido';
         setError(`Error: ${message}`);
+        setLoading(false);
       });
 
-    // 🔹 Conectar al WebSocket
-    const socket = io('http://127.0.0.1:5000', {
+    const socket = io('https://checkia.lobby-digital.com/api', {
+      // ⬅️ URL pública
+      path: '/socket.io',
       transports: ['websocket'],
       withCredentials: true,
     });
 
-    socket.on('connect', () => {});
+    socket.on('connect', () => {
+      console.log('✅ Socket conectado en producción');
+    });
 
     socket.on('qr_update', (qrBase64) => {
       setQrCode(qrBase64);
@@ -63,11 +66,12 @@ export function AddWhatsAppNumber({ open, onClose }: AddWhatsAppNumberProps) {
     socket.on('whatsapp_connected', () => {
       setQrCode(null);
       setLoading(false);
-      onClose(); // 🔹 Cierra el modal automáticamente
+      onClose();
     });
 
     socket.on('qr_error', (err: { message?: string }) => {
       setError(err.message || 'Error al generar QR');
+      setLoading(false);
     });
 
     return () => {

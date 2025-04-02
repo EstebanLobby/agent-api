@@ -58,6 +58,7 @@ app.use("/api/users", userRoutes);
 
 // 🚀 Configurar WebSockets después de inicializar el servidor
 const io = new Server(server, {
+  path: '/socket.io',
   cors: {
     origin: "*", // 🔹 Permite conexiones de cualquier origen
     methods: ["GET", "POST"],
