@@ -25,7 +25,7 @@ export function WhatsAppModal(): React.JSX.Element {
 
   const obtenerQR = async (num: string) => {
     try {
-      const res = await fetch(`https://checkia.lobby-digital.com/apiapi/whatsapp/qr/${num}`);
+      const res = await fetch(`https://checkia.lobby-digital.com/api/whatsapp/qr/${num}`);
       const data = await res.json();
       if (data.qr) {
         setQrs((prev) => ({ ...prev, [num]: data.qr }));
@@ -37,7 +37,7 @@ export function WhatsAppModal(): React.JSX.Element {
 
   const verificarEstado = async (num: string) => {
     try {
-      const res = await fetch(`https://checkia.lobby-digital.com/apiapi/whatsapp/status/${num}`);
+      const res = await fetch(`https://checkia.lobby-digital.com/api/whatsapp/status/${num}`);
       const data = await res.json();
       setConnectedNumbers((prev) => ({ ...prev, [num]: data.connected }));
 
@@ -51,7 +51,7 @@ export function WhatsAppModal(): React.JSX.Element {
 
   const iniciarSesion = async () => {
     setLoading(true);
-    await fetch('https://checkia.lobby-digital.com/apiapi/whatsapp/start', {
+    await fetch('https://checkia.lobby-digital.com/api/whatsapp/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ numero }),
