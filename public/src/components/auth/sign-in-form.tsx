@@ -21,7 +21,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { z as zod } from 'zod';
 
 import { paths } from '@/paths';
-import { authClient } from '@/lib/auth/client';
+import { authClient } from '@/lib/auth/auth-client';
 import { useUser } from '@/hooks/use-user';
 
 const schema = zod.object({
@@ -31,7 +31,7 @@ const schema = zod.object({
 
 type Values = zod.infer<typeof schema>;
 
-const defaultValues = { email: 'admin@jsonapi.com', password: 'secret' } satisfies Values;
+const defaultValues = { email: 'member@jsonapi.com', password: 'secret' } satisfies Values;
 
 export function SignInForm(): React.JSX.Element {
   const router = useRouter();

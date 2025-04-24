@@ -1,10 +1,10 @@
 require("dotenv").config();
 const express = require("express");
-const mongoose = require("./config/db");
+const mongoose = require("../config/database");
 const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
-const swaggerDocs = require("./config/swaggerConfig");
+const swaggerDocs = require("../config/swagger");
 const cookieParser = require("cookie-parser");
 
 const app = express();
@@ -58,22 +58,22 @@ app.use(cookieParser());
 swaggerDocs(app);
 
 // 🚀 Importar rutas
-const userRoutes = require("./routes/userRoutes");
-const authRoutes = require("./routes/authRoutes");
-const whatsappRoutes = require("./routes/whatsappRoutes");
+const userRoutes = require("../routes/userRoutes");
+const authRoutes = require("../routes/authRoutes");
+const whatsappRoutes = require("../routes/whatsappRoutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/whatsapp", whatsappRoutes);
-app.use("/api/users", userRoutes);
+app.use("/api/user", userRoutes);
 
 
 
 // 🔹 Inicializar el servicio de WhatsApp con `io`
-const { iniciarWhatsAppService } = require("./services/whatsappService");
+const { iniciarWhatsAppService } = require("../services/whatsapp/whatsapp.service");
 iniciarWhatsAppService(io);
 
 // 🔹 Inicializar los sockets
-require("./sockets/chatSocket")(io);
+require("../sockets/chatSocket")(io);
 
 // 🚀 Ruta base para probar
 app.get("/", (req, res) => {

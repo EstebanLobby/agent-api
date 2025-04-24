@@ -30,10 +30,12 @@ export interface UserProviderProps {
 export const UserConsumer = UserContext.Consumer;
 export function UserProvider({ children }: UserProviderProps): React.JSX.Element {
   const { data: userData, error, isLoading, refetch } = useFetchUser();
-  const [user, setUser] = React.useState<User | null>(null);
+  const [user, setUser] = React.useState<User | null | undefined>(undefined);
 
   React.useEffect(() => {
-    setUser(userData ?? null);
+    if (userData !== undefined) {
+      setUser(userData ?? null);
+    }
   }, [userData]);
 
   // 1. Envuelve setCurrentUser en useCallback

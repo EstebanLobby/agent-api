@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { authClient } from '@/lib/auth/client';
+import { authClient } from '@/lib/auth/auth-client';
 
 // Hook para obtener el usuario autenticado
 export function useFetchUser() {

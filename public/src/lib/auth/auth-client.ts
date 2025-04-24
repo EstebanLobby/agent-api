@@ -90,7 +90,7 @@ class AuthClient {
 
   async getUser(): Promise<{ data?: User | null; error?: string }> {
     try {
-      const response = await api.get<ApiResponse<User | null>>('/auth/me');
+      const response = await api.get<ApiResponse<User | null>>('/user/me');
       return { data: response.data as unknown as User | null };
     } catch (error: any) {
       return { data: null, error: 'No autenticado' };

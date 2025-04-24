@@ -15,9 +15,7 @@ import TableRow from '@mui/material/TableRow';
 import { ArrowClockwise as ReloadIcon } from '@phosphor-icons/react/dist/ssr/ArrowClockwise';
 import { DotsThreeVertical as DotsThreeVerticalIcon } from '@phosphor-icons/react/dist/ssr/DotsThreeVertical';
 import { Plus as PlusIcon } from '@phosphor-icons/react/dist/ssr/Plus';
-
 import { whatsappClient } from '@/lib/whatsappApi/whatsapp-api';
-
 import { AddWhatsAppNumber } from './add-whatsapp-number';
 import { SendMessageModal } from './send-message-modal';
 import { logger } from '@/lib/default-logger';
@@ -96,7 +94,7 @@ export function BoardIntegrations({ sx }: { sx?: any }): React.JSX.Element {
   return (
     <Card sx={sx}>
       <CardHeader
-        title="Integraciones Whatsapp"
+        title="Integracion Whatsapp"
         action={
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button

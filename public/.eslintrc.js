@@ -90,8 +90,9 @@ module.exports = {
     'import/no-extraneous-dependencies': [
       'error',
       {
-        devDependencies: true,
-        peerDependencies: true,
+        devDependencies: false,
+        optionalDependencies: false,
+        peerDependencies: false,
       },
     ],
 

@@ -79,6 +79,4 @@ router.post("/logout", logout);
  */
 router.get("/refresh-token", refreshToken);
 
-router.get("/me", authMiddleware, me);
-
 module.exports = router;

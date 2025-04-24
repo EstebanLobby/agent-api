@@ -1,4 +1,7 @@
 const User = require("../models/User");
+const jwt = require("jsonwebtoken");
+const Role = require("../models/Role");
+const editProfileService = require("../services/user/editProfile.service");
 
 // 🔥 Obtener todos los usuarios con sus sesiones (solo ADMIN)
 const getAllUsers = async (req, res) => {
@@ -26,4 +29,48 @@ const getUserProfile = async (req, res) => {
   }
 };
 
-module.exports = { getAllUsers, getUserProfile };
+
+const getProfile = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ message: "No autorizado" });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select("-password").lean();
+    if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
+
+    const role = await Role.findById(user.role).lean();
+    if (!role) return res.status(400).json({ message: "Rol no encontrado" });
+
+    res.status(200).json({
+      ...user,
+      role: role.name,
+      permissions: role.permissions || [],
+    });
+  } catch (err) {
+    console.error("Error en /me:", err);
+    res.status(401).json({ message: "Token inválido o expirado" });
+  }
+};
+
+const editProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const updatedUser = await editProfileService(userId, req.body);
+
+    res.status(200).json({
+      success: true,
+      message: "Perfil actualizado correctamente.",
+      data: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error al editar el perfil:", error);
+    res.status(500).json({
+      success: false,
+      message: "Hubo un error al actualizar el perfil.",
+    });
+  }
+};
+
+
+module.exports = { getAllUsers, getUserProfile, getProfile, editProfile};

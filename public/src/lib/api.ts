@@ -1,7 +1,7 @@
 import axios from 'axios'; // ✅ Agregá esto arriba del todo
 
 export const api = axios.create({
-  baseURL: 'https://checkia.lobby-digital.com/api',
+  baseURL: 'http://localhost:5000/api',
   headers: { 'Content-Type': 'application/json' },
   withCredentials: false,
 });

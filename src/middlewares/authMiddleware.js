@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const Role = require("../models/Role");
 
 const authMiddleware = async (req, res, next) => {
   try {
@@ -35,7 +36,13 @@ const authMiddleware = async (req, res, next) => {
 
     console.log(`👤 Usuario autenticado: ${user.email}`);
 
-    req.user = user; // Ahora `req.user._id` estará disponible
+    const role = await Role.findById(user.role).lean();
+
+    req.user = {
+      ...user,
+      role: role.name, // ahora el middleware verá "member" en lugar de ObjectId
+    };
+    
     next();
   } catch (error) {
     console.error("❌ Error en el middleware de autenticación:", error);

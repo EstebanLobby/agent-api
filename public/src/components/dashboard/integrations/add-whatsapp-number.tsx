@@ -23,7 +23,6 @@ export function AddWhatsAppNumber({ open, onClose }: AddWhatsAppNumberProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  console.log(qrCode);
   useEffect(() => {
     if (!open) {
       setQrCode(null);
@@ -47,11 +46,15 @@ export function AddWhatsAppNumber({ open, onClose }: AddWhatsAppNumberProps) {
         setLoading(false);
       });
 
-    const socket = io('https://checkia.lobby-digital.com', {
-      // ⬅️ URL pública
-      path: '/socket.io',
-      transports: ['polling', 'websocket'],
-    });
+    const socket = io(
+      process.env.NEXT_PUBLIC_ENV === 'testing'
+        ? process.env.NEXT_PUBLIC_API_URL
+        : 'https://checkia.lobby-digital.com',
+      {
+        path: '/socket.io',
+        transports: ['polling', 'websocket'],
+      },
+    );
 
     socket.on('connect', () => {
       console.log('✅ Socket conectado en producción');

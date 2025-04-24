@@ -17,21 +17,29 @@ const UserSchema = new mongoose.Schema(
     password: { type: String, required: true },
     role: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Role", // Referencia al modelo de roles
+      ref: "Role",
       required: true,
     },
     photo: { type: String, default: "https://example.com/default-avatar.png" },
     telephone: { type: String, required: false },
     age: { type: Number, required: false, min: 18 },
     integrations: { type: IntegrationsSchema, default: {} },
-    isActive: { type: Boolean, default: true }, // Estado del usuario
+    isActive: { type: Boolean, default: true }, // Usuario habilitado
+    isSuspended: { type: Boolean, default: false }, // Usuario bloqueado
+    suspendedReason: { type: String, default: null },
+    suspendedUntil: { type: Date, default: null },
+    deletedAt: { type: Date, default: null }, // Soft delete
   },
-  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } } // Habilita las propiedades virtuales
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
 
 // Relación virtual con las sesiones
 UserSchema.virtual("sessions", {
-  ref: "Session", // Modelo de referencia
+  ref: "Session",
   localField: "_id",
   foreignField: "userId",
 });

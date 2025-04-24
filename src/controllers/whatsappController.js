@@ -4,7 +4,7 @@ const {
   enviarMensaje,
   getQR,
   getEstado,
-} = require("../services/whatsappService");
+} = require("../services/whatsapp/whatsapp.service");
 const QRCode = require("qrcode");
 
 // 🔹 Iniciar sesión de WhatsApp sin ingresar número
