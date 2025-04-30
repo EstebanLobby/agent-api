@@ -2,6 +2,7 @@
 
 import type { User } from '@/types/user';
 import { api } from '@/lib/api';
+import { signOut } from '@/store/slices/auth/auth-thunks';
 
 export interface SignUpParams {
   firstName: string;
@@ -57,7 +58,7 @@ class AuthClient {
         },
       });
 
-      localStorage.setItem('custom-auth-token', data.token);
+      localStorage.setItem('auth_token', data.token);
       return { data: data.user };
     } catch (error: any) {
       console.error('Error en login:', error);
@@ -99,9 +100,9 @@ class AuthClient {
 
   async signOut(): Promise<{ error?: string }> {
     try {
-      await api.post('/auth/logout', {}, { withCredentials: true });
-
-      localStorage.removeItem('custom-auth-token');
+      await api.post('/auth/logout', {}, { withCredentials: false });
+      signOut();
+      localStorage.removeItem('auth_token');
 
       return {};
     } catch (error: any) {

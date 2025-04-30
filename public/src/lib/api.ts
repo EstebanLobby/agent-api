@@ -1,4 +1,5 @@
 import axios from 'axios'; // ✅ Agregá esto arriba del todo
+import { authStorage } from './auth/auth-storage';
 
 export const api = axios.create({
   baseURL: 'http://localhost:5000/api',
@@ -9,7 +10,7 @@ export const api = axios.create({
 // Interceptor seguro para TypeScript
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('custom-auth-token');
+    const token = authStorage.getToken();
     return {
       ...config,
       headers: {

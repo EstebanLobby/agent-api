@@ -19,6 +19,7 @@ const getAllUsers = async (req, res) => {
 // 🔥 Obtener el perfil del usuario autenticado
 const getUserProfile = async (req, res) => {
   try {
+    console.log('req.user:', req.user);
     const user = await User.findById(req.user.id).select("-password");
     if (!user)
       return res.status(404).json({ message: "Usuario no encontrado" });

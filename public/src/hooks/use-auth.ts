@@ -1,60 +1,26 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAppDispatch, useAppSelector } from '../store';
+import { signIn, signUp, signOut, resetPassword } from '../store/slices/auth/auth-thunks';
 
-import { authClient } from '@/lib/auth/auth-client';
+export const useAuth = () => {
+  const dispatch = useAppDispatch();
+  const auth = useAppSelector((state) => state.auth);
 
-// Hook para obtener el usuario autenticado
-export function useFetchUser() {
-  return useQuery({
-    queryKey: ['user'],
-    queryFn: async () => {
-      const { data } = await authClient.getUser();
-      return data;
-    },
-    // Para debug: siempre consulta
-    staleTime: 0,
-    gcTime: 0, // también evita que guarde el resultado por más tiempo
-    retry: false,
-  });
-}
+  return {
+    // Estado
+    isAuthenticated: auth.isAuthenticated,
+    isInitialized: auth.isInitialized,
+    user: auth.user,
+    loading: auth.loading,
+    error: auth.error,
 
-// Hook para iniciar sesión
-export function useLogin() {
-  const queryClient = useQueryClient();
+    // Acciones
+    signIn: (email: string, password: string) => dispatch(signIn({ email, password })),
 
-  return useMutation({
-    mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      return authClient.signInWithPassword({ email, password });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user'] }); // Actualiza la caché del usuario tras login
-    },
-  });
-}
+    signUp: (email: string, name: string, password: string) =>
+      dispatch(signUp({ email, name, password })),
 
-// Hook para cerrar sesión
-export function useLogout() {
-  const queryClient = useQueryClient();
+    signOut: () => dispatch(signOut()),
 
-  return useMutation({
-    mutationFn: async () => {
-      return authClient.signOut();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user'] }); // Elimina el usuario de la caché tras logout
-    },
-  });
-}
-
-// Hook para registrarse
-export function useSignUp() {
-  return useMutation({
-    mutationFn: async (params: {
-      firstName: string;
-      lastName: string;
-      email: string;
-      password: string;
-    }) => {
-      return authClient.signUp(params);
-    },
-  });
-}
+    resetPassword: (email: string) => dispatch(resetPassword({ email })),
+  };
+};

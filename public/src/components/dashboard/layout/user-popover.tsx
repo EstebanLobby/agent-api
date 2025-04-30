@@ -1,3 +1,5 @@
+'use client';
+
 import * as React from 'react';
 import RouterLink from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -15,7 +17,7 @@ import { User as UserIcon } from '@phosphor-icons/react/dist/ssr/User';
 import { paths } from '@/paths';
 import { authClient } from '@/lib/auth/auth-client';
 import { logger } from '@/lib/default-logger';
-import { useUser } from '@/hooks/use-user';
+import { logout } from '@/store/slices/auth/auth-slice';
 
 export interface UserPopoverProps {
   anchorEl: Element | null;
@@ -24,24 +26,16 @@ export interface UserPopoverProps {
 }
 
 export function UserPopover({ anchorEl, onClose, open }: UserPopoverProps): React.JSX.Element {
-  const { logout } = useUser(); // ← Usa el logout aquí
   const router = useRouter();
 
   const handleSignOut = React.useCallback(async (): Promise<void> => {
     try {
-      const { error } = await authClient.signOut();
-
-      if (error) {
-        logger.error('Sign out error', error);
-        return;
-      }
-      logout();
-
+      await authClient.signOut();
       router.push('/auth/sign-in');
     } catch (err) {
       logger.error('Sign out catch error', err);
     }
-  }, [logout, router]);
+  }, [router]);
 
   return (
     <Popover

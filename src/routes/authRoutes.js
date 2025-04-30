@@ -39,7 +39,7 @@ router.post("/register", register);
  *       500:
  *         description: Error interno del servidor
  */
-router.post("/login", login);
+router.post("/sign-in", login);
 
 /**
  * @swagger

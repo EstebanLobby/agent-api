@@ -132,6 +132,13 @@ module.exports = {
         allowAfterThis: true,
       },
     ],
+    'no-param-reassign': [
+      'error',
+      {
+        props: true,
+        ignorePropertyModificationsFor: ['state'], // ← Permite mutar 'state' (para Redux)
+      },
+    ],
     'react/no-danger': [
       'error',
       {

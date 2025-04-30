@@ -1,65 +1,59 @@
-import { AuthAdapter } from '@/lib/auth/auth-adapter';
-import { SignUpParams, SignInWithPasswordParams, ResetPasswordParams } from '@/types/auth';
-import { User } from '@/types/user';
+import { api } from '@/lib/api';
+import { User } from '../../types/user';
 
-export class AuthService {
-  async signUp(params: SignUpParams): Promise<{ error?: string }> {
-    try {
-      await AuthAdapter.signUp(params);
-      return {};
-    } catch (error: any) {
-      return { error: error.response?.data?.message || 'Error al registrarse' };
-    }
-  }
-
-  async signInWithPassword(
-    params: SignInWithPasswordParams,
-  ): Promise<{ data?: User; error?: string }> {
-    try {
-      const { data } = await AuthAdapter.signInWithPassword(params);
-      localStorage.setItem('custom-auth-token', data.token);
-      return { data: data.user };
-    } catch (error: any) {
-      console.error('Error en login:', error);
-      if (error.response) {
-        return { error: error.response.data?.message || error.response.statusText };
-      }
-      if (error.request) return { error: 'No se recibió respuesta del servidor' };
-      return { error: 'Error al configurar la solicitud' };
-    }
-  }
-
-  async resetPassword(params: ResetPasswordParams): Promise<{ error?: string }> {
-    try {
-      await AuthAdapter.resetPassword(params);
-      return {};
-    } catch (error: any) {
-      return { error: error.response?.data?.message || 'Error al restablecer la contraseña' };
-    }
-  }
-
-  async getUser(): Promise<{ data?: User | null; error?: string }> {
-    try {
-      const response = await AuthAdapter.getUser();
-      return { data: response.data.data as User | null };
-    } catch (error: any) {
-      return { data: null, error: 'No autenticado' };
-    }
-  }
-
-  async signOut(): Promise<{ error?: string }> {
-    try {
-      await AuthAdapter.signOut();
-      localStorage.removeItem('custom-auth-token');
-      return {};
-    } catch (error: any) {
-      return { error: error.response?.data?.message || 'Error al cerrar sesión' };
-    }
-  }
-
-  async signInWithOAuth(): Promise<{ error?: string }> {
-    return { error: 'Autenticación social no implementada' };
-  }
+interface AuthResponse {
+  user: User;
+  token: string;
 }
 
-export const authService = new AuthService();
+// Iniciar sesión
+export const signIn = async (email: string, password: string): Promise<AuthResponse> => {
+  try {
+    // Asegúrate de enviar un objeto plano
+    const credentials = {
+      email, // o simplemente `email`
+      password, // o `password`
+    };
+
+    const response = await api.post<AuthResponse>('/auth/sign-in', credentials, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    console.error('Error en signIn:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || 'Error de autenticación');
+  }
+};
+
+// Registrar usuario
+export const signUp = async (
+  email: string,
+  name: string,
+  password: string,
+): Promise<AuthResponse> => {
+  const response = await api.post<AuthResponse>('/auth/sign-up', {
+    email,
+    name,
+    password,
+  });
+  return response.data;
+};
+
+// Obtener perfil de usuario (validar token)
+export const getUserProfile = async (token: string): Promise<User> => {
+  console.log(token);
+  const response = await api.get<User>('/user/profile', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+// Restablecer contraseña
+export const resetPassword = async (email: string): Promise<void> => {
+  await api.post('/auth/reset-password', { email });
+};

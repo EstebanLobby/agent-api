@@ -56,7 +56,7 @@ export function UserProvider({ children }: UserProviderProps): React.JSX.Element
 
   // 3. Envuelve logout en useCallback
   const logout = React.useCallback(() => {
-    localStorage.removeItem('custom-auth-token');
+    localStorage.removeItem('auth_token');
     setUser(null);
   }, []);
 

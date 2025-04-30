@@ -24,7 +24,7 @@ import { SatisfactionTrend } from '@/components/dashboard/overview/satisfaction-
 import { PendingTasks } from '@/components/dashboard/overview/pending-tasks';
 import { Grid } from '@mui/material';
 
-export const metadata = { title: `Overview | Dashboard | ${config.site.name}` } satisfies Metadata;
+export const metadata = { title: `Dashboard | ${config.site.name}` } satisfies Metadata;
 
 export default function Page(): React.JSX.Element {
   return (

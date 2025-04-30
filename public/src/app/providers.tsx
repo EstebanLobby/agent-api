@@ -1,11 +1,10 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Provider as ReduxProvider } from 'react-redux';
-import { store } from '@/store';
-
-const queryClient = new QueryClient();
+import { Provider } from 'react-redux';
+import { store } from '../store';
+import { ThemeProvider } from '../components/core/theme-provider/theme-provider';
+import { LocalizationProvider } from '../components/core/localization-provider';
 
 interface ProvidersProps {
   children: ReactNode;
@@ -13,8 +12,10 @@ interface ProvidersProps {
 
 export function Providers({ children }: ProvidersProps) {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ReduxProvider store={store}>{children}</ReduxProvider>
-    </QueryClientProvider>
+    <Provider store={store}>
+      <ThemeProvider>
+        <LocalizationProvider>{children}</LocalizationProvider>
+      </ThemeProvider>
+    </Provider>
   );
 }

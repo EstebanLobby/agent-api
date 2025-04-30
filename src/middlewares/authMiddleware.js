@@ -4,11 +4,9 @@ const Role = require("../models/Role");
 
 const authMiddleware = async (req, res, next) => {
   try {
-    console.log("🔐 Middleware de autenticación activado.");
 
     const authHeader = req.headers.authorization;
-    console.log("🛠 Header Authorization recibido:", authHeader);
-
+  
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       console.error("❌ No se proporcionó un token válido.");
       return res
@@ -22,7 +20,7 @@ const authMiddleware = async (req, res, next) => {
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log("✅ Token decodificado:", decoded);
+  
     } catch (error) {
       console.error("❌ Error verificando el token:", error.message);
       return res.status(401).json({ error: "Token inválido o expirado." });
@@ -39,8 +37,8 @@ const authMiddleware = async (req, res, next) => {
     const role = await Role.findById(user.role).lean();
 
     req.user = {
-      ...user,
-      role: role.name, // ahora el middleware verá "member" en lugar de ObjectId
+      ...user.toObject(),
+      role: role.name,
     };
     
     next();

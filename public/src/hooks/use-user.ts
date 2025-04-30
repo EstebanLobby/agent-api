@@ -1,14 +1,14 @@
-import * as React from 'react';
+// src/hooks/use-user.ts
+import { useSelector } from 'react-redux';
+import type { RootState } from '@/store';
 
-import type { UserContextValue } from '@/contexts/user-context';
-import { UserContext } from '@/contexts/user-context';
+export function useUser() {
+  const user = useSelector((state: RootState) => state.auth.user);
 
-export function useUser(): UserContextValue {
-  const context = React.useContext(UserContext);
-
-  if (!context) {
-    throw new Error('useUser must be used within a UserProvider');
-  }
-
-  return context;
+  // Si necesitas mantener la misma interfaz que UserContextValue
+  return {
+    user,
+    // isLoading: state.auth.isLoading,
+    // error: state.auth.error
+  };
 }

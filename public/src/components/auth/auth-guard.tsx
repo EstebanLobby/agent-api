@@ -1,35 +1,42 @@
 'use client';
 
-import * as React from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Alert from '@mui/material/Alert';
+import { Box, CircularProgress } from '@mui/material';
+import { useAppDispatch, useAppSelector } from '../../store';
+import { selectIsAuthenticated, selectIsInitialized } from '@/store/slices/auth/auth-selectors';
+import { restoreSession } from '@/store/slices/auth/auth-thunks';
 
-import { paths } from '@/paths';
-import { logger } from '@/lib/default-logger';
-import { useUser } from '@/hooks/use-user';
-
-export interface AuthGuardProps {
+interface AuthGuardProps {
   children: React.ReactNode;
 }
 
-export function AuthGuard({ children }: AuthGuardProps): React.JSX.Element | null {
+export function AuthGuard({ children }: AuthGuardProps) {
   const router = useRouter();
-  const { user, error, isLoading } = useUser();
+  const dispatch = useAppDispatch();
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const isInitialized = useAppSelector(selectIsInitialized);
 
-  React.useEffect(() => {
-    if (isLoading) return;
-    if (!user && !error) {
-      logger.debug('[AuthGuard]: No user, redirecting');
-      router.replace(paths.auth.signIn);
+  // Restaurar sesión al montar
+  useEffect(() => {
+    dispatch(restoreSession());
+  }, [dispatch]);
+
+  // Redirigir si no está autenticado y ya se inicializó la sesión
+  useEffect(() => {
+    if (isInitialized && !isAuthenticated) {
+      router.push('/auth/sign-in');
     }
-  }, [isLoading, user, error, router]);
+  }, [isAuthenticated, isInitialized, router]);
 
-  if (isLoading || (!user && !error)) {
-    return null; // ⏳ Esperamos a que cargue
-  }
-
-  if (error) {
-    return <Alert color="error">{error}</Alert>;
+  if (!isInitialized) {
+    return (
+      <Box
+        sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}
+      >
+        <CircularProgress />
+      </Box>
+    );
   }
 
   return <>{children}</>;

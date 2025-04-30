@@ -1,170 +1,111 @@
 'use client';
 
-import * as React from 'react';
-import RouterLink from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Alert,
-  Button,
-  FormControl,
-  FormHelperText,
-  InputLabel,
-  Link,
-  OutlinedInput,
-  Stack,
-  Typography,
-} from '@mui/material';
-import { Eye as EyeIcon } from '@phosphor-icons/react/dist/ssr/Eye';
-import { EyeSlash as EyeSlashIcon } from '@phosphor-icons/react/dist/ssr/EyeSlash';
-import { Controller, useForm } from 'react-hook-form';
-import { z as zod } from 'zod';
+import { z } from 'zod';
+import { Box, Button, TextField, Link, Alert, CircularProgress } from '@mui/material';
+import { useAppDispatch, useAppSelector } from '../../store';
+import { signIn } from '../../store/slices/auth/auth-thunks';
 
-import { paths } from '@/paths';
-import { authClient } from '@/lib/auth/auth-client';
-import { useUser } from '@/hooks/use-user';
-
-const schema = zod.object({
-  email: zod.string().min(1, { message: 'Email is required' }).email(),
-  password: zod.string().min(1, { message: 'Password is required' }),
+// Esquema de validación extendido
+const loginSchema = z.object({
+  email: z.string().min(1, 'El correo es requerido').email('Correo electrónico inválido'),
+  password: z
+    .string()
+    .min(6, 'La contraseña debe tener al menos 6 caracteres')
+    .max(50, 'La contraseña no puede exceder los 50 caracteres'),
 });
 
-type Values = zod.infer<typeof schema>;
+type LoginFormValues = z.infer<typeof loginSchema>;
 
-const defaultValues = { email: 'member@jsonapi.com', password: 'secret' } satisfies Values;
-
-export function SignInForm(): React.JSX.Element {
+export function SignInForm() {
   const router = useRouter();
-  const { refetchUser } = useUser();
-  const [showPassword, setShowPassword] = React.useState<boolean>(false);
-  const [isPending, setIsPending] = React.useState<boolean>(false);
+  const dispatch = useAppDispatch();
+  const { loading, error } = useAppSelector((state) => state.auth);
 
   const {
-    control,
+    register,
     handleSubmit,
-    setError,
-    formState: { errors },
-  } = useForm<Values>({ defaultValues, resolver: zodResolver(schema) });
-
-  const onSubmit = React.useCallback(
-    async (values: Values): Promise<void> => {
-      setIsPending(true);
-
-      const { data: loginData, error: loginError } = await authClient.signInWithPassword(values);
-
-      if (loginError || !loginData) {
-        setError('root', {
-          type: 'server',
-          message: loginError || 'Error inesperado al iniciar sesión',
-        });
-        setIsPending(false);
-        return;
-      }
-
-      // ✅ Refresca los datos completos del usuario desde el backend
-      await refetchUser?.();
-      // Redirige al dashboard después del login exitoso
-      router.push('/dashboard');
+    formState: { errors, isSubmitting, isValid },
+    reset,
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    mode: 'onChange', // Validar mientras se escribe
+    defaultValues: {
+      email: '',
+      password: '',
     },
-    [router, setError, refetchUser],
-  );
+  });
+
+  const onSubmit = async (values: LoginFormValues) => {
+    try {
+      const resultAction = await dispatch(signIn(values));
+
+      if (signIn.fulfilled.match(resultAction)) {
+        reset(); // Limpiar formulario
+        router.push('/dashboard'); // Redirigir solo si el login fue exitoso
+      }
+    } catch (error) {
+      // El error ya está manejado por el thunk y se muestra desde el estado
+      console.error('Login error:', error);
+    }
+  };
 
   return (
-    <Stack spacing={4}>
-      <Stack spacing={1}>
-        <Typography variant="h4">Sign in</Typography>
-        <Typography color="text.secondary" variant="body2">
-          Don&apos;t have an account?{' '}
-          <Link
-            component={RouterLink}
-            href={paths.auth.signUp}
-            underline="hover"
-            variant="subtitle2"
-          >
-            Sign up
-          </Link>
-        </Typography>
-      </Stack>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <Stack spacing={2}>
-          <Controller
-            control={control}
-            name="email"
-            render={({ field }) => (
-              <FormControl error={Boolean(errors.email)}>
-                <InputLabel>Email address</InputLabel>
-                <OutlinedInput {...field} label="Email address" type="email" />
-                {errors.email ? <FormHelperText>{errors.email.message}</FormHelperText> : null}
-              </FormControl>
-            )}
-          />
-          <Controller
-            control={control}
-            name="password"
-            render={({ field }) => (
-              <FormControl error={Boolean(errors.password)}>
-                <InputLabel>Password</InputLabel>
-                <OutlinedInput
-                  {...field}
-                  endAdornment={
-                    showPassword ? (
-                      <EyeIcon
-                        cursor="pointer"
-                        fontSize="var(--icon-fontSize-md)"
-                        onClick={() => {
-                          setShowPassword(false);
-                        }}
-                      />
-                    ) : (
-                      <EyeSlashIcon
-                        cursor="pointer"
-                        fontSize="var(--icon-fontSize-md)"
-                        onClick={() => {
-                          setShowPassword(true);
-                        }}
-                      />
-                    )
-                  }
-                  label="Password"
-                  type={showPassword ? 'text' : 'password'}
-                />
-                {errors.password ? (
-                  <FormHelperText>{errors.password.message}</FormHelperText>
-                ) : null}
-              </FormControl>
-            )}
-          />
-          <div>
-            <Link component={RouterLink} href={paths.auth.resetPassword} variant="subtitle2">
-              Forgot password?
-            </Link>
-          </div>
-          {errors.root ? <Alert color="error">{errors.root.message}</Alert> : null}
-          <Button disabled={isPending} type="submit" variant="contained">
-            Sign in
-          </Button>
-        </Stack>
-      </form>
-      <Alert color="warning">
-        Admin: Use{' '}
-        <Typography component="span" sx={{ fontWeight: 700 }} variant="inherit">
-          admin@jsonapi.com
-        </Typography>{' '}
-        with password{' '}
-        <Typography component="span" sx={{ fontWeight: 700 }} variant="inherit">
-          secret
-        </Typography>
-      </Alert>
-      <Alert color="warning">
-        Member: Use{' '}
-        <Typography component="span" sx={{ fontWeight: 700 }} variant="inherit">
-          member@jsonapi.com
-        </Typography>{' '}
-        with password{' '}
-        <Typography component="span" sx={{ fontWeight: 700 }} variant="inherit">
-          secret
-        </Typography>
-      </Alert>
-    </Stack>
+    <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 3 }}>
+      {error ? (
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => {}}>
+          {typeof error === 'string' ? error : 'Error al iniciar sesión'}
+        </Alert>
+      ) : null}
+
+      <TextField
+        margin="normal"
+        required
+        fullWidth
+        id="email"
+        label="Correo electrónico"
+        autoComplete="email"
+        autoFocus
+        {...register('email')}
+        error={!!errors.email}
+        helperText={errors.email?.message}
+        disabled={loading}
+      />
+
+      <TextField
+        margin="normal"
+        required
+        fullWidth
+        id="password"
+        label="Contraseña"
+        type="password"
+        autoComplete="current-password"
+        {...register('password')}
+        error={!!errors.password}
+        helperText={errors.password?.message}
+        disabled={loading}
+      />
+
+      <Button
+        type="submit"
+        fullWidth
+        variant="contained"
+        sx={{ mt: 3, mb: 2, height: 48 }}
+        disabled={loading || isSubmitting || !isValid}
+      >
+        {loading ? <CircularProgress size={24} color="inherit" /> : 'Iniciar sesión'}
+      </Button>
+
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+        <Link href="/auth/reset-password" variant="body2" underline="hover">
+          ¿Olvidaste tu contraseña?
+        </Link>
+        <Link href="/auth/sign-up" variant="body2" underline="hover">
+          ¿No tienes cuenta? Regístrate
+        </Link>
+      </Box>
+    </Box>
   );
 }

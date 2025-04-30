@@ -20,5 +20,5 @@ export const AuthAdapter = {
 
   getUser: () => api.get<ApiResponse<User | null>>('/user/me'),
 
-  signOut: () => api.post('/auth/logout', {}, { withCredentials: true }),
+  signOut: () => api.post('/auth/logout', {}, { withCredentials: false }),
 };
