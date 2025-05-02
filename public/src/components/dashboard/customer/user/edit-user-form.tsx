@@ -7,7 +7,7 @@ import { Button, Stack, TextField, Typography, Switch, FormControlLabel } from '
 interface User {
   id: string;
   avatar: string;
-  name: string;
+  username: string;
   email: string;
   phone?: string;
   role: string;
@@ -33,7 +33,7 @@ export default function EditUserForm({ user, isAdmin }: EditUserFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <Stack spacing={3}>
-        <TextField label="Nombre" {...register('name')} fullWidth />
+        <TextField label="Nombre" {...register('username')} fullWidth />
         <TextField label="Email" {...register('email')} fullWidth />
         <TextField label="Teléfono" {...register('phone')} fullWidth />
         <TextField label="Dirección" {...register('address')} fullWidth />

@@ -1,26 +1,27 @@
 export interface User {
-  id: string;
   _id: string;
-  name: string;
+  username: string;
   email: string;
-  avatar?: string;
-  photo?: string;
-  jobTitle?: string;
-  city?: string;
-  country?: string;
-  timezone?: string;
-  profile_image?: string;
-  isActive: boolean;
+  role: string;
+  photo: string;
   integrations: {
     whatsapp: boolean;
     facebook: boolean;
     instagram: boolean;
     telegram: boolean;
   };
-  permissions?: string[];
-  created_at: string;
-  updatedAt: string;
+  isActive: boolean;
+  isSuspended: boolean;
+  suspendedReason: string | null;
+  suspendedUntil: Date | null;
+  deletedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
   __v: number;
-  role: 'admin' | 'member';
-  [key: string]: unknown;
+  id: string;
+}
+
+export interface UpdateUserProfilePayload {
+  username?: string;
+  email?: string;
 }

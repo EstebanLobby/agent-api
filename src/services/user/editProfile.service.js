@@ -2,7 +2,8 @@
 const User = require("../../models/User");
 
 const editProfile = async (userId, updateData) => {
-  const allowedFields = ["username", "email", "photo", "telephone", "age", "integrations"];
+  //Por ahora solo actualizo el nombre, mas adelante veremos de modificar mas cosas
+  const allowedFields = ["username"];
 
   // Filtramos los campos permitidos
   const filteredData = {};
@@ -11,7 +12,6 @@ const editProfile = async (userId, updateData) => {
       filteredData[field] = updateData[field];
     }
   }
-
   const updatedUser = await User.findByIdAndUpdate(
     userId,
     { $set: filteredData },

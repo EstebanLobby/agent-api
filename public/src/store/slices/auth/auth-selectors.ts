@@ -9,4 +9,4 @@ export const selectIsAuthenticated = createSelector(selectAuth, (auth) => auth.i
 export const selectIsInitialized = createSelector(selectAuth, (auth) => auth.isInitialized);
 
 // Selector para datos derivados
-export const selectUserRoles = createSelector(selectAuth, (auth) => auth.user?.roles || []);
+export const selectUser = createSelector(selectAuth, (auth) => auth.user || []);

@@ -2,14 +2,25 @@
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { Stack, TextField, Avatar, Box, FormControlLabel, Switch, Alert } from '@mui/material';
+import {
+  Stack,
+  TextField,
+  Avatar,
+  Box,
+  FormControlLabel,
+  Switch,
+  Alert,
+  Snackbar,
+} from '@mui/material';
 import { LoadingButton } from '@mui/lab';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { updateUserProfile } from '@/store/slices/user/user-thunks';
+import { useAppDispatch } from '@/store';
 
 // Esquema de validación con Zod
 const userSchema = z.object({
-  name: z.string().min(2, 'Nombre muy corto').max(50, 'Nombre muy largo'),
+  username: z.string().min(2, 'Nombre muy corto').max(50, 'Nombre muy largo'),
   email: z.string().email('Email inválido'),
   phone: z.string().min(8, 'Teléfono muy corto').optional(),
   address: z.string().max(100, 'Dirección muy larga').optional(),
@@ -22,7 +33,7 @@ interface EditUserFormProps {
   user: {
     id: string;
     avatar: string;
-    name: string;
+    username: string;
     email: string;
     phone?: string;
     role: string;
@@ -34,35 +45,52 @@ interface EditUserFormProps {
 }
 
 export default function EditUserForm({ user, onSave }: EditUserFormProps) {
+  const dispatch = useAppDispatch();
+  const [snackbar, setSnackbar] = React.useState({
+    open: false,
+    message: '',
+    severity: 'success' as 'success' | 'error',
+  });
+
   const {
     register,
     handleSubmit,
     formState: { errors, isDirty, isSubmitting },
     reset,
-    watch,
   } = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues: {
-      name: user.name,
+      username: user.username,
       email: user.email,
-      phone: user.phone || '',
-      address: user.address || '',
-      avatar: user.avatar,
     },
   });
 
-  const avatarUrl = watch('avatar');
-
   const onSubmit = async (data: UserFormData) => {
     try {
-      if (onSave) {
-        await onSave(data);
-      }
-      // Resetear el estado "dirty" después de guardar
+      await dispatch(updateUserProfile(data)).unwrap();
+
+      setSnackbar({
+        open: true,
+        message: 'Perfil actualizado correctamente',
+        severity: 'success',
+      });
+
       reset(data, { keepValues: true });
-    } catch (error) {
-      console.error('Error al guardar:', error);
+
+      if (onSave) {
+        onSave();
+      }
+    } catch (error: any) {
+      setSnackbar({
+        open: true,
+        message: error.message || 'Error al actualizar el perfil',
+        severity: 'error',
+      });
     }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar((prev) => ({ ...prev, open: false }));
   };
 
   return (
@@ -70,25 +98,16 @@ export default function EditUserForm({ user, onSave }: EditUserFormProps) {
       <Stack spacing={4}>
         {/* Sección de avatar */}
         <Stack direction="row" spacing={3} alignItems="center">
-          <Avatar src={avatarUrl} sx={{ width: 80, height: 80 }} />
+          <Avatar sx={{ width: 80, height: 80 }} />
           <TextField
-            label="URL del avatar"
-            {...register('avatar')}
+            label="Nombre completo"
+            {...register('username')}
             fullWidth
-            error={!!errors.avatar}
-            helperText={errors.avatar?.message}
+            error={!!errors.username}
+            helperText={errors.username?.message}
+            required
           />
         </Stack>
-
-        {/* Campos editables */}
-        <TextField
-          label="Nombre completo"
-          {...register('name')}
-          fullWidth
-          error={!!errors.name}
-          helperText={errors.name?.message}
-          required
-        />
 
         <TextField
           label="Email"
@@ -101,7 +120,7 @@ export default function EditUserForm({ user, onSave }: EditUserFormProps) {
           disabled={user.role !== 'admin'} // Solo admin puede cambiar email
         />
 
-        <TextField
+        {/*         <TextField
           label="Teléfono"
           {...register('phone')}
           fullWidth
@@ -117,7 +136,7 @@ export default function EditUserForm({ user, onSave }: EditUserFormProps) {
           rows={3}
           error={!!errors.address}
           helperText={errors.address?.message}
-        />
+        /> */}
 
         {/* Solo para admins */}
         {user.role === 'admin' && (
@@ -145,6 +164,16 @@ export default function EditUserForm({ user, onSave }: EditUserFormProps) {
         >
           Guardar cambios
         </LoadingButton>
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        >
+          <Alert onClose={handleCloseSnackbar} severity={snackbar.severity}>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Stack>
     </Box>
   );

@@ -10,6 +10,7 @@ const {
 const loginService = require("../services/auth/login.service");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
+const Role = require("../models/Role"); 
 
 const register = async (req, res) => {
   try {
@@ -19,8 +20,20 @@ const register = async (req, res) => {
     if (existingUser)
       return res.status(400).json({ message: "El usuario ya existe" });
 
+    // Asignamos el rol "member" por defecto
+    const memberRole = await Role.findOne({ name: "member" });
+    if (!memberRole) {
+      return res.status(500).json({ message: "Rol 'member' no encontrado" });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ username, email, password: hashedPassword });
+    const newUser = new User({
+      username,
+      email,
+      password: hashedPassword,
+      role: memberRole._id,
+    });
+
     await newUser.save();
 
     res.status(201).json({ message: "Usuario registrado correctamente" });
@@ -28,6 +41,7 @@ const register = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 const login = async (req, res) => {
   try {

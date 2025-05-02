@@ -6,7 +6,7 @@ const RoleSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true, // El nombre del rol debe ser único
-      enum: ["admin", "creator", "member"], // Roles predefinidos
+      enum: ["admin", "member"], // Roles predefinidos
     },
     permissions: [
       {
