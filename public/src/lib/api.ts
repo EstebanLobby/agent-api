@@ -2,7 +2,7 @@ import axios from 'axios'; // ✅ Agregá esto arriba del todo
 import { authStorage } from './auth/auth-storage';
 
 export const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: 'https://checkia.lobby-digital.com/api',
   headers: { 'Content-Type': 'application/json' },
   withCredentials: false,
 });

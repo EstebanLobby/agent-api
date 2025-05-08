@@ -11,7 +11,7 @@ const options = {
     },
     servers: [
       {
-        url: "http://localhost:5000",
+        url: "https://checkia.lobby-digital.com",
         description: "Servidor Local",
       },
     ],
@@ -45,9 +45,9 @@ const swaggerDocs = (app) => {
     res.send(swaggerSpec);
   });
 
-  console.log("📄 Swagger Docs disponible en: http://localhost:5000/api-docs");
+  console.log("📄 Swagger Docs disponible en: https://checkia.lobby-digital.com/api-docs");
   console.log(
-    "📄 Swagger JSON disponible en: http://localhost:5000/api-docs.json"
+    "📄 Swagger JSON disponible en: https://checkia.lobby-digital.com/api-docs.json"
   );
 };
 

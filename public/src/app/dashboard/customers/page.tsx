@@ -17,7 +17,7 @@ export default function Page(): React.JSX.Element {
   const fetchAllUsers = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:5000/api/users/all', {
+      const res = await fetch('https://checkia.lobby-digital.com/api/users/all', {
         method: 'GET',
       });
 
