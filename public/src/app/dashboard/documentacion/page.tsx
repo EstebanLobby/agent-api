@@ -11,7 +11,7 @@ export default function Page() {
   const apiDocsUrl =
     process.env.NEXT_PUBLIC_ENV === 'testing'
       ? `${process.env.NEXT_TESTING_API_URL}/api-docs.json`
-      : 'https://checkia.lobby-digital.com/api-docs.json';
+      : `${process.env.NEXT_PUBLIC_API_URL}/api-docs.json`;
 
   return (
     <div className="p-4">
