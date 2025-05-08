@@ -56,9 +56,7 @@ export function AddWhatsAppNumber({ open, onClose }: AddWhatsAppNumberProps) {
       },
     );
 
-    socket.on('connect', () => {
-      console.log('✅ Socket conectado en producción');
-    });
+    socket.on('connect', () => {});
 
     socket.on('qr_update', (qrBase64) => {
       setQrCode(qrBase64);

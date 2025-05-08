@@ -17,6 +17,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { updateUserProfile } from '@/store/slices/user/user-thunks';
 import { useAppDispatch } from '@/store';
+import type { User } from '@/types/user';
 
 // Esquema de validación con Zod
 const userSchema = z.object({
@@ -24,23 +25,13 @@ const userSchema = z.object({
   email: z.string().email('Email inválido'),
   phone: z.string().min(8, 'Teléfono muy corto').optional(),
   address: z.string().max(100, 'Dirección muy larga').optional(),
-  avatar: z.string().url('URL inválida').optional(),
+  photo: z.string().url('URL inválida').optional(),
 });
 
 type UserFormData = z.infer<typeof userSchema>;
 
 interface EditUserFormProps {
-  user: {
-    id: string;
-    avatar: string;
-    username: string;
-    email: string;
-    phone?: string;
-    role: string;
-    address?: string;
-    isSuspended: boolean;
-    isActive: boolean;
-  };
+  user: User;
   onSave?: (data: UserFormData) => Promise<void>;
 }
 
@@ -67,7 +58,7 @@ export default function EditUserForm({ user, onSave }: EditUserFormProps) {
 
   const onSubmit = async (data: UserFormData) => {
     try {
-      await dispatch(updateUserProfile(data)).unwrap();
+      await dispatch(updateUserProfile(data));
 
       setSnackbar({
         open: true,
@@ -78,12 +69,23 @@ export default function EditUserForm({ user, onSave }: EditUserFormProps) {
       reset(data, { keepValues: true });
 
       if (onSave) {
-        onSave();
+        onSave(data);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      let errorMessage = 'Error al actualizar el perfil';
+
+      if (
+        error &&
+        typeof error === 'object' &&
+        'message' in error &&
+        typeof error.message === 'string'
+      ) {
+        errorMessage = error.message;
+      }
+
       setSnackbar({
         open: true,
-        message: error.message || 'Error al actualizar el perfil',
+        message: errorMessage,
         severity: 'error',
       });
     }
@@ -98,7 +100,7 @@ export default function EditUserForm({ user, onSave }: EditUserFormProps) {
       <Stack spacing={4}>
         {/* Sección de avatar */}
         <Stack direction="row" spacing={3} alignItems="center">
-          <Avatar sx={{ width: 80, height: 80 }} />
+          <Avatar src={user.photo} sx={{ width: 80, height: 80 }} />
           <TextField
             label="Nombre completo"
             {...register('username')}

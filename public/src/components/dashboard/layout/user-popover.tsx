@@ -17,7 +17,6 @@ import { User as UserIcon } from '@phosphor-icons/react/dist/ssr/User';
 import { paths } from '@/paths';
 import { authClient } from '@/lib/auth/auth-client';
 import { logger } from '@/lib/default-logger';
-import { logout } from '@/store/slices/auth/auth-slice';
 
 export interface UserPopoverProps {
   anchorEl: Element | null;

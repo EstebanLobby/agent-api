@@ -23,6 +23,11 @@ import {
   Select,
   MenuItem,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 
 import {
@@ -30,13 +35,11 @@ import {
   Trash as TrashIcon,
   Prohibit as ProhibitIcon,
   MagnifyingGlass as SearchIcon,
-  Funnel as FilterIcon,
   User as UserIcon,
 } from '@phosphor-icons/react/dist/ssr';
 
 import dayjs from 'dayjs';
 import { useSelection } from '@/hooks/use-selection';
-import { Router } from 'next/router';
 
 export interface Customer {
   id: string;
@@ -54,6 +57,16 @@ interface CustomersTableProps {
   page?: number;
   rows?: Customer[];
   rowsPerPage?: number;
+  onPageChange?: (page: number) => void;
+  onRowsPerPageChange?: (rowsPerPage: number) => void;
+}
+
+// Interfaz para el diálogo
+interface DialogState {
+  open: boolean;
+  title: string;
+  message: string;
+  action: () => void;
 }
 
 export function CustomersTable({
@@ -61,12 +74,46 @@ export function CustomersTable({
   rows = [],
   page = 0,
   rowsPerPage = 5,
+  onPageChange,
+  onRowsPerPageChange,
 }: CustomersTableProps): React.JSX.Element {
+  // Estado del diálogo mejorado
+  const [dialogState, setDialogState] = React.useState<DialogState>({
+    open: false,
+    title: '',
+    message: '',
+    action: () => {},
+  });
+
   const [searchTerm, setSearchTerm] = React.useState('');
   const [roleFilter, setRoleFilter] = React.useState('');
   const [currentPage, setCurrentPage] = React.useState(page);
   const [rowsPerPageState, setRowsPerPageState] = React.useState(rowsPerPage);
   const router = useRouter();
+
+  // Función para abrir el diálogo con parámetros específicos
+  const openConfirmDialog = (title: string, message: string, action: () => void) => {
+    setDialogState({
+      open: true,
+      title,
+      message,
+      action,
+    });
+  };
+
+  // Función para cerrar el diálogo
+  const closeDialog = () => {
+    setDialogState({
+      ...dialogState,
+      open: false,
+    });
+  };
+
+  // Función para ejecutar la acción y cerrar el diálogo
+  const handleConfirm = () => {
+    dialogState.action();
+    closeDialog();
+  };
 
   const filteredRows = React.useMemo(() => {
     return rows.filter((row) => {
@@ -91,12 +138,16 @@ export function CustomersTable({
 
   const handleChangePage = (_: unknown, newPage: number) => {
     setCurrentPage(newPage);
+    onPageChange?.(newPage);
   };
 
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPageState(parseInt(event.target.value, 10));
+    const newRowsPerPage = parseInt(event.target.value, 10);
+    setRowsPerPageState(newRowsPerPage);
     setCurrentPage(0);
+    onRowsPerPageChange?.(newRowsPerPage);
   };
+
   return (
     <Card>
       {/* Top Actions */}
@@ -143,7 +194,13 @@ export function CustomersTable({
               <Button
                 variant="outlined"
                 color="warning"
-                onClick={() => alert('Suspender seleccionados')}
+                onClick={() =>
+                  openConfirmDialog(
+                    'Confirmar suspensión',
+                    '¿Estás seguro de que deseas suspender los usuarios seleccionados?',
+                    () => console.log('Suspendiendo usuarios', Array.from(selected)),
+                  )
+                }
               >
                 Suspender
               </Button>
@@ -152,7 +209,13 @@ export function CustomersTable({
               <Button
                 variant="outlined"
                 color="error"
-                onClick={() => alert('Eliminar seleccionados')}
+                onClick={() =>
+                  openConfirmDialog(
+                    'Confirmar eliminación',
+                    '¿Estás seguro de que deseas eliminar los usuarios seleccionados?',
+                    () => console.log('Eliminando usuarios', Array.from(selected)),
+                  )
+                }
               >
                 Eliminar
               </Button>
@@ -160,6 +223,20 @@ export function CustomersTable({
           </Stack>
         </Box>
       )}
+
+      {/* Diálogo reutilizable */}
+      <Dialog open={dialogState.open} onClose={closeDialog} aria-labelledby="alert-dialog-title">
+        <DialogTitle id="alert-dialog-title">{dialogState.title}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>{dialogState.message}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDialog}>Cancelar</Button>
+          <Button onClick={handleConfirm} color="error" autoFocus>
+            Confirmar
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Box sx={{ overflowX: 'auto' }}>
         <Table sx={{ minWidth: 900 }}>
@@ -207,7 +284,13 @@ export function CustomersTable({
                     <Select
                       size="small"
                       value={row.role}
-                      onChange={(e) => alert(`Cambiar rol de ${row.name} a ${e.target.value}`)}
+                      onChange={(e) =>
+                        openConfirmDialog(
+                          'Cambiar rol',
+                          `¿Cambiar rol de ${row.name} a ${e.target.value}?`,
+                          () => console.log(`Cambiando rol de ${row.name} a ${e.target.value}`),
+                        )
+                      }
                     >
                       <MenuItem value="admin">Admin</MenuItem>
                       <MenuItem value="user">Usuario</MenuItem>
@@ -224,13 +307,28 @@ export function CustomersTable({
                       <Tooltip title="Suspender Usuario">
                         <IconButton
                           color="warning"
-                          onClick={() => alert(`Suspender a ${row.name}`)}
+                          onClick={() =>
+                            openConfirmDialog(
+                              'Suspender usuario',
+                              `¿Estás seguro de que deseas suspender a ${row.name}?`,
+                              () => console.log(`Suspendiendo a ${row.name}`),
+                            )
+                          }
                         >
                           <ProhibitIcon size={20} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Eliminar Usuario">
-                        <IconButton color="error" onClick={() => alert(`Eliminar a ${row.name}`)}>
+                        <IconButton
+                          color="error"
+                          onClick={() =>
+                            openConfirmDialog(
+                              'Eliminar usuario',
+                              `¿Estás seguro de que deseas eliminar a ${row.name}?`,
+                              () => console.log(`Eliminando a ${row.name}`),
+                            )
+                          }
+                        >
                           <TrashIcon size={20} />
                         </IconButton>
                       </Tooltip>
@@ -246,7 +344,7 @@ export function CustomersTable({
       <Divider />
       <TablePagination
         component="div"
-        count={filteredRows.length}
+        count={count}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
         page={currentPage}

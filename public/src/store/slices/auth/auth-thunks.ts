@@ -22,8 +22,6 @@ export const signIn = createAsyncThunk<
     const response = await authService.signIn(email, password);
     const { user, token } = response;
 
-    console.log(user);
-    // Guardar token en localStorage
     authStorage.setToken(token);
 
     dispatch(authenticateSuccess({ user, token }));

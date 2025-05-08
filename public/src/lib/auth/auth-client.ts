@@ -61,8 +61,6 @@ class AuthClient {
       localStorage.setItem('auth_token', data.token);
       return { data: data.user };
     } catch (error: any) {
-      console.error('Error en login:', error);
-
       // Mejor manejo de errores
       if (error.response) {
         // El servidor respondió con un status fuera de 2xx

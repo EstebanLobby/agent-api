@@ -42,6 +42,9 @@ module.exports = {
       },
     ],
 
+    'no-console': 'off', // Deshabilita completamente las advertencias de console
+    'no-alert': 'off',
+
     // ========== TypeScript ==========
     '@typescript-eslint/no-unused-vars': [
       'error',

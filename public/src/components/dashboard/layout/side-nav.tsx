@@ -111,7 +111,7 @@ function renderNavItems({
   );
 }
 
-const getFilteredNavItems = (role: 'admin' | 'member') => {
+const getFilteredNavItems = (role: string) => {
   return navItems.filter((item) => {
     const route = paths.dashboard[item.key as keyof typeof paths.dashboard];
     return route && 'roles' in route && Array.isArray(route.roles) && route.roles.includes(role);

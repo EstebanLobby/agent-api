@@ -44,35 +44,22 @@ export function AccountInfo(): React.JSX.Element {
       <CardContent>
         <Stack spacing={2} sx={{ alignItems: 'center' }}>
           <Avatar
-            src={user.avatar || '/assets/avatar.png'}
-            alt={user.name}
+            src={user.photo || '/assets/avatar.png'}
+            alt={user.username}
             sx={{ height: 80, width: 80 }}
           />
           <Stack spacing={1} sx={{ textAlign: 'center' }}>
-            <Typography variant="h5">{user.name}</Typography>
-            {user.jobTitle ? (
-              <Typography color="text.secondary" variant="body2">
-                {user?.jobTitle}
-              </Typography>
-            ) : null}
-            {user.city && user.country ? (
-              <Typography color="text.secondary" variant="body2">
-                {`${user?.city}, ${user?.country}`}
-              </Typography>
-            ) : null}
-
-            {user.timezone ? (
-              <Typography color="text.secondary" variant="body2">
-                {user?.timezone}
-              </Typography>
-            ) : null}
+            <Typography variant="h5">{user.username}</Typography>
+            <Typography color="text.secondary" variant="body2">
+              {user.email}
+            </Typography>
           </Stack>
         </Stack>
       </CardContent>
       <Divider />
       <CardActions>
         <Button fullWidth variant="text">
-          Subir imagen
+          Subir foto
         </Button>
       </CardActions>
     </Card>

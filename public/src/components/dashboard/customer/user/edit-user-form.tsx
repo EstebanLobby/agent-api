@@ -3,19 +3,7 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Button, Stack, TextField, Typography, Switch, FormControlLabel } from '@mui/material';
-
-interface User {
-  id: string;
-  avatar: string;
-  username: string;
-  email: string;
-  phone?: string;
-  role: string;
-  address?: string;
-  createdAt: Date;
-  isSuspended: boolean;
-  isActive: boolean;
-}
+import type { User } from '@/types/user';
 
 interface EditUserFormProps {
   user: User;

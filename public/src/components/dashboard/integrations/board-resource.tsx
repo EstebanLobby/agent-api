@@ -98,13 +98,13 @@ export function BoardResource({ sx }: { sx?: any }): React.JSX.Element {
               type="file"
               onChange={handleFileChange}
             />
-            <label htmlFor="raised-button-file">
-              <Tooltip title="PDF - DOC - TXT">
-                <Button variant="outlined" component="span" startIcon={<AttachmentIcon />}>
-                  Seleccionar archivo
-                </Button>
-              </Tooltip>
-            </label>
+
+            <Tooltip title="PDF - DOC - TXT">
+              <Button variant="outlined" component="span" startIcon={<AttachmentIcon />}>
+                Seleccionar archivo
+              </Button>
+            </Tooltip>
+
             {fileName ? (
               <Typography variant="body2" sx={{ mt: 1 }}>
                 Archivo seleccionado: {fileName}

@@ -1,8 +1,17 @@
 import { Middleware } from '@reduxjs/toolkit';
-import { RootState } from '../index';
 import axios from 'axios';
 
-const createAuthMiddleware = (): Middleware<{}, RootState> => {
+// Define una interfaz que incluye solo lo que necesitamos
+interface AuthState {
+  token: string | null;
+}
+
+// Define una versión mínima de RootState
+interface MinimalRootState {
+  auth: AuthState;
+}
+
+const createAuthMiddleware = (): Middleware<{}, MinimalRootState> => {
   return (store) => (next) => (action) => {
     // Primero ejecutamos la acción
     const result = next(action);

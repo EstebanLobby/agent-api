@@ -57,10 +57,7 @@ export function PendingTasks({ tasks, sx }: PendingTasksProps): ReactElement {
 
   const handleSubmit = () => {
     // Aquí deberías implementar la lógica para guardar la nueva tarea
-    console.log('Nueva tarea:', {
-      ...newTask,
-      id: `TSK-${Math.floor(1000 + Math.random() * 9000)}`, // Genera un ID aleatorio
-    });
+
     handleClose();
     // Resetear el formulario
     setNewTask({

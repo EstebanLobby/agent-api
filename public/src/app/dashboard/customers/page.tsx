@@ -7,16 +7,12 @@ import Typography from '@mui/material/Typography';
 import { CustomersTable } from '@/components/dashboard/customer/customers-table';
 import type { Customer } from '@/components/dashboard/customer/customers-table';
 
-function applyPagination(rows: Customer[], page: number, rowsPerPage: number): Customer[] {
-  return rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
-}
-
 export default function Page(): React.JSX.Element {
   const [customers, setCustomers] = React.useState<Customer[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const page = 0;
-  const rowsPerPage = 5;
+  const [page, setPage] = React.useState(0);
+  const [rowsPerPage, setRowsPerPage] = React.useState(5);
 
   const fetchAllUsers = async () => {
     try {
@@ -34,16 +30,17 @@ export default function Page(): React.JSX.Element {
       // Adaptamos el formato para que encaje con Customer
       const formatted = data.map((user: any) => ({
         id: user._id,
-        name: user.name,
+        name: user.username,
         email: user.email,
         phone: user.phone || '',
-        avatar: '/assets/avatar-placeholder.png', // default o dinámico si tenés
+        avatar: user.photo || '/assets/avatar-placeholder.png',
         address: {
           city: user.address?.city || '',
           country: user.address?.country || '',
           state: user.address?.state || '',
           street: user.address?.street || '',
         },
+        role: user.role,
         createdAt: new Date(user.createdAt),
       }));
 
@@ -59,7 +56,7 @@ export default function Page(): React.JSX.Element {
     fetchAllUsers();
   }, []);
 
-  const paginatedCustomers = applyPagination(customers, page, rowsPerPage);
+  const paginatedCustomers = customers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
     <Stack spacing={3}>
@@ -78,6 +75,8 @@ export default function Page(): React.JSX.Element {
           page={page}
           rows={paginatedCustomers}
           rowsPerPage={rowsPerPage}
+          onPageChange={setPage}
+          onRowsPerPageChange={setRowsPerPage}
         />
       )}
     </Stack>

@@ -1,12 +1,12 @@
-import { configureStore } from '@reduxjs/toolkit';
+import { configureStore, Middleware } from '@reduxjs/toolkit'; // Importar Middleware
 import { useDispatch, useSelector, TypedUseSelectorHook } from 'react-redux';
 import authReducer from './slices/auth/auth-slice';
 import userReducer from './slices/user/user-slice';
 import createAuthMiddleware from './middleware/auth-middleware';
 
 // Middleware para manejar tokens JWT
-
-const authMiddleware = createAuthMiddleware();
+// Agregar anotación de tipo explícita
+const authMiddleware: Middleware = createAuthMiddleware();
 
 export const store = configureStore({
   reducer: {

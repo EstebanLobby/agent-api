@@ -7,10 +7,20 @@ import { PencilSimple as EditIcon } from '@phosphor-icons/react/dist/ssr';
 import { useSelector } from 'react-redux';
 import { selectUser } from '@/store/slices/auth/auth-selectors';
 import UserProfile from '@/components/dashboard/customer/user/user-profile';
+import type { User } from '@/types/user';
 
 export default function Page(): React.JSX.Element {
   const user = useSelector(selectUser);
   const router = useRouter();
+
+  // Verificar que user sea del tipo User
+  if (!user || Array.isArray(user)) {
+    return (
+      <Stack spacing={3}>
+        <Typography>Error: Usuario no encontrado</Typography>
+      </Stack>
+    );
+  }
 
   const handleEdit = () => {
     router.push(`/dashboard/account/edit`);
@@ -23,7 +33,7 @@ export default function Page(): React.JSX.Element {
       </Stack>
 
       <Card sx={{ p: 3 }}>
-        <UserProfile user={user} />
+        <UserProfile user={user as User} />
 
         <Divider sx={{ my: 3 }} />
 

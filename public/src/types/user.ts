@@ -4,6 +4,9 @@ export interface User {
   email: string;
   role: string;
   photo: string;
+  phone?: string;
+  address?: string;
+  permissions?: string[];
   integrations: {
     whatsapp: boolean;
     facebook: boolean;
@@ -24,4 +27,7 @@ export interface User {
 export interface UpdateUserProfilePayload {
   username?: string;
   email?: string;
+  phone?: string;
+  address?: string;
+  photo?: string;
 }

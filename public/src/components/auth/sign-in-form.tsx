@@ -46,9 +46,9 @@ export function SignInForm() {
         reset(); // Limpiar formulario
         router.push('/dashboard'); // Redirigir solo si el login fue exitoso
       }
-    } catch (error) {
+    } catch (err) {
       // El error ya está manejado por el thunk y se muestra desde el estado
-      console.error('Login error:', error);
+      console.error('Login error:', err);
     }
   };
 

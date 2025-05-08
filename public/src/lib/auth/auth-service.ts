@@ -23,7 +23,6 @@ export const signIn = async (email: string, password: string): Promise<AuthRespo
 
     return response.data;
   } catch (error: any) {
-    console.error('Error en signIn:', error.response?.data || error.message);
     throw new Error(error.response?.data?.message || 'Error de autenticación');
   }
 };
@@ -44,7 +43,6 @@ export const signUp = async (
 
 // Obtener perfil de usuario (validar token)
 export const getUserProfile = async (token: string): Promise<User> => {
-  console.log(token);
   const response = await api.get<User>('/user/profile', {
     headers: {
       Authorization: `Bearer ${token}`,

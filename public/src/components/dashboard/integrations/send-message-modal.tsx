@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -33,12 +33,26 @@ const countries = [
   // Agrega más países según sea necesario
 ];
 
-export function SendMessageModal({ open, onClose, initialNumber = '' }: SendMessageModalProps) {
+export function SendMessageModal({ open, onClose, initialNumber }: SendMessageModalProps) {
   const [mensaje, setMensaje] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCountry, setSelectedCountry] = useState('549'); // Argentina por defecto
   const [rawNumber, setRawNumber] = useState('');
+
+  useEffect(() => {
+    if (initialNumber) {
+      // Si el número inicial incluye el código de país, extraerlo
+      const match = initialNumber.match(/^\+?(\d{1,3})(\d+)$/);
+      if (match) {
+        const [, countryCode, number] = match;
+        setSelectedCountry(countryCode);
+        setRawNumber(number);
+      } else {
+        setRawNumber(initialNumber);
+      }
+    }
+  }, [initialNumber]);
 
   const handleSend = async () => {
     // Construye el número completo con código de país

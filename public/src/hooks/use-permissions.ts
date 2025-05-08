@@ -5,10 +5,10 @@ interface UsePermissionsReturn {
 }
 
 export function usePermissions(): UsePermissionsReturn {
-  const { userData } = useUser();
+  const { user } = useUser();
 
   const hasPermission = (permission: string): boolean => {
-    return Boolean(userData?.permissions?.includes(permission));
+    return Boolean(user?.permissions?.includes(permission));
   };
 
   return { hasPermission };
