@@ -30,15 +30,19 @@ export const signIn = async (email: string, password: string): Promise<AuthRespo
 // Registrar usuario
 export const signUp = async (
   email: string,
-  name: string,
+  username: string,
   password: string,
 ): Promise<AuthResponse> => {
-  const response = await api.post<AuthResponse>('/auth/sign-up', {
-    email,
-    name,
-    password,
-  });
-  return response.data;
+  try {
+    const response = await api.post<AuthResponse>('/auth/register', {
+      email,
+      username,
+      password,
+    });
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || 'Error en el registro');
+  }
 };
 
 // Obtener perfil de usuario (validar token)

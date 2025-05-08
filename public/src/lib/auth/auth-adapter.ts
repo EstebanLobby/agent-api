@@ -12,7 +12,7 @@ export const AuthAdapter = {
   signUp: (params: SignUpParams) => api.post('/auth/register', params),
 
   signInWithPassword: (params: SignInWithPasswordParams) =>
-    api.post<AuthResponse>('/auth/login', params, {
+    api.post<AuthResponse>('/auth/sign-in', params, {
       headers: { 'Content-Type': 'application/json' },
     }),
 

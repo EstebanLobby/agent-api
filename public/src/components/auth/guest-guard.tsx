@@ -1,10 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Alert } from '@mui/material';
 
-import { paths } from '@/paths';
 import { logger } from '@/lib/default-logger';
 import { useUser } from '@/hooks/use-user';
 
@@ -14,13 +13,14 @@ export interface GuestGuardProps {
 
 export function GuestGuard({ children }: GuestGuardProps): React.JSX.Element | null {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, error, isLoading } = useUser();
   const [isChecking, setIsChecking] = React.useState<boolean>(true);
 
   const checkPermissions = async (): Promise<void> => {
     if (isLoading) {
       logger.debug('[AuthGuard]: Esperando a que el usuario termine de cargar...');
-      return; // ✅ No hacer nada mientras `useUser()` sigue cargando
+      return;
     }
 
     if (error) {
@@ -28,9 +28,11 @@ export function GuestGuard({ children }: GuestGuardProps): React.JSX.Element | n
       return;
     }
 
-    if (!user) {
-      logger.debug('[AuthGuard]: User is not logged in, redirecting to sign in');
-      router.replace(paths.auth.signIn);
+    // Si el usuario está autenticado y está en una ruta de autenticación, redirigir al dashboard
+    if (user && pathname.startsWith('/auth/')) {
+      logger.debug('[AuthGuard]: User is logged in, redirecting to dashboard');
+      router.replace('/dashboard');
+      return;
     }
 
     setIsChecking(false);
@@ -40,8 +42,7 @@ export function GuestGuard({ children }: GuestGuardProps): React.JSX.Element | n
     checkPermissions().catch(() => {
       // noop
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Expected
-  }, [user, error, isLoading]);
+  }, [user, error, isLoading, pathname]);
 
   if (isChecking) {
     return null;

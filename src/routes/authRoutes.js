@@ -4,7 +4,9 @@ const {
   login,
   logout,
   refreshToken,
-  me,
+  requestPasswordReset,
+  resetPassword,
+  testEmail
 } = require("../controllers/authController");
 const authMiddleware = require("../middlewares/authMiddleware");
 
@@ -39,7 +41,7 @@ router.post("/register", register);
  *       500:
  *         description: Error interno del servidor
  */
-router.post("/sign-in", login);
+router.post("/login", login);
 
 /**
  * @swagger
@@ -77,6 +79,11 @@ router.post("/logout", logout);
  *       500:
  *         description: Error interno del servidor
  */
-router.get("/refresh-token", refreshToken);
+router.post("/refresh-token", refreshToken);
+
+router.post("/request-password-reset", requestPasswordReset);
+router.post("/reset-password", resetPassword);
+
+router.post("/test-email", testEmail);
 
 module.exports = router;

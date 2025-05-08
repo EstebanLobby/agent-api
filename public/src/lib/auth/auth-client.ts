@@ -35,10 +35,18 @@ interface ApiResponse<T> {
 }
 
 class AuthClient {
-  async signUp(params: SignUpParams): Promise<{ error?: string }> {
+  async signUp(params: SignUpParams): Promise<{ data?: AuthResponse; error?: string }> {
     try {
+      // Primero registramos al usuario
       await api.post('/auth/register', params);
-      return {}; // Retornar vacío si la petición es exitosa
+
+      // Luego hacemos login automático
+      const loginResponse = await this.signInWithPassword({
+        email: params.email,
+        password: params.password,
+      });
+
+      return { data: loginResponse.data };
     } catch (error: any) {
       return { error: error.response?.data?.message || 'Error al registrarse' };
     }
@@ -48,34 +56,12 @@ class AuthClient {
     return { error: 'Autenticación social no implementada' };
   }
 
-  async signInWithPassword(
-    params: SignInWithPasswordParams,
-  ): Promise<{ data?: User; error?: string }> {
-    try {
-      const { data } = await api.post<AuthResponse>('/auth/login', params, {
-        headers: {
-          'Content-Type': 'application/json', // Asegura el header
-        },
-      });
-
-      localStorage.setItem('auth_token', data.token);
-      return { data: data.user };
-    } catch (error: any) {
-      // Mejor manejo de errores
-      if (error.response) {
-        // El servidor respondió con un status fuera de 2xx
-        return {
-          error:
-            error.response.data?.message || error.response.statusText || 'Error de autenticación',
-        };
-      }
-      if (error.request) {
-        // La solicitud fue hecha pero no hubo respuesta
-        return { error: 'No se recibió respuesta del servidor' };
-      }
-      // Error al configurar la solicitud
-      return { error: 'Error al configurar la solicitud' };
-    }
+  async signInWithPassword(params: SignInWithPasswordParams) {
+    return api.post<AuthResponse>('/auth/sign-in', params, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   }
 
   async resetPassword(params: ResetPasswordParams): Promise<{ error?: string }> {
