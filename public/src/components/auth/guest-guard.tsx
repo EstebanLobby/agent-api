@@ -42,7 +42,7 @@ export function GuestGuard({ children }: GuestGuardProps): React.JSX.Element | n
     checkPermissions().catch(() => {
       // noop
     });
-  }, [user, error, isLoading, pathname]);
+  }, [user, error, isLoading, pathname, checkPermissions]);
 
   if (isChecking) {
     return null;

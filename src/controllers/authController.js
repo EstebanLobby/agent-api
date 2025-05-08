@@ -130,7 +130,7 @@ const sendWelcomeEmail = async (email, username, password) => {
 
 const register = async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { firstName, lastName, email, password } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser)
@@ -144,7 +144,7 @@ const register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({
-      username,
+      username: `${firstName} ${lastName}`,
       email,
       password: hashedPassword,
       role: memberRole._id,
@@ -154,7 +154,7 @@ const register = async (req, res) => {
 
     // Enviar correo de bienvenida
     try {
-      await sendWelcomeEmail(email, username, password);
+      await sendWelcomeEmail(email, `${firstName} ${lastName}`, password);
     } catch (emailError) {
       console.error('Error al enviar el correo de bienvenida:', emailError);
       // No retornamos error aquí para no interrumpir el registro

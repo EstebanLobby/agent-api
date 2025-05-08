@@ -22,7 +22,8 @@ import { paths } from '@/paths';
 import { authClient } from '@/lib/auth/auth-client';
 
 const schema = zod.object({
-  username: zod.string().min(1, { message: 'El nombre de usuario es requerido' }),
+  firstName: zod.string().min(1, { message: 'El nombre es requerido' }),
+  lastName: zod.string().min(1, { message: 'El apellido es requerido' }),
   email: zod
     .string()
     .min(1, { message: 'El correo es requerido' })
@@ -34,7 +35,8 @@ const schema = zod.object({
 type Values = zod.infer<typeof schema>;
 
 const defaultValues = {
-  username: '',
+  firstName: '',
+  lastName: '',
   email: '',
   password: '',
   terms: false,
@@ -92,13 +94,26 @@ export function SignUpForm(): React.JSX.Element {
         <Stack spacing={2}>
           <Controller
             control={control}
-            name="username"
+            name="firstName"
             render={({ field }) => (
-              <FormControl error={Boolean(errors.username)}>
-                <InputLabel>Nombre de usuario</InputLabel>
-                <OutlinedInput {...field} label="Nombre de usuario" />
-                {errors.username ? (
-                  <FormHelperText>{errors.username.message}</FormHelperText>
+              <FormControl error={Boolean(errors.firstName)}>
+                <InputLabel>Nombre</InputLabel>
+                <OutlinedInput {...field} label="Nombre" />
+                {errors.firstName ? (
+                  <FormHelperText>{errors.firstName.message}</FormHelperText>
+                ) : null}
+              </FormControl>
+            )}
+          />
+          <Controller
+            control={control}
+            name="lastName"
+            render={({ field }) => (
+              <FormControl error={Boolean(errors.lastName)}>
+                <InputLabel>Apellido</InputLabel>
+                <OutlinedInput {...field} label="Apellido" />
+                {errors.lastName ? (
+                  <FormHelperText>{errors.lastName.message}</FormHelperText>
                 ) : null}
               </FormControl>
             )}
