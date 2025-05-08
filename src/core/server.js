@@ -45,9 +45,13 @@ connectDBAndStartServer();
 // 🚀 Configurar middlewares
 app.use(
   cors({
-    origin: "*", // Permite todos los orígenes
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Métodos permitidos
-    allowedHeaders: ["Content-Type", "Authorization"], // Headers permitidos
+    origin: [
+      'https://agent-front-daw5.onrender.com',
+      'http://localhost:3000'
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true
   })
 );
 
