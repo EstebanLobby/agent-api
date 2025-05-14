@@ -14,17 +14,22 @@ const Role = require("../models/Role");
 
 const register = async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { firstName, lastName, email, password } = req.body;
 
+    // Verificar si el usuario ya existe
     const existingUser = await User.findOne({ email });
-    if (existingUser)
+    if (existingUser) {
       return res.status(400).json({ message: "El usuario ya existe" });
+    }
 
     // Asignamos el rol "member" por defecto
     const memberRole = await Role.findOne({ name: "member" });
     if (!memberRole) {
       return res.status(500).json({ message: "Rol 'member' no encontrado" });
     }
+
+    // Crear username a partir de firstName y lastName
+    const username = `${firstName.toLowerCase()}.${lastName.toLowerCase()}`;
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({
@@ -36,9 +41,27 @@ const register = async (req, res) => {
 
     await newUser.save();
 
-    res.status(201).json({ message: "Usuario registrado correctamente" });
+    // Generar tokens después del registro exitoso
+    const token = generateAccessToken({ id: newUser._id, role: memberRole.name });
+    const refreshToken = generateRefreshToken({ id: newUser._id });
+
+    // Establecer la cookie de refresh token
+    setRefreshTokenCookie(res, refreshToken);
+
+    // Devolver la misma respuesta que el login
+    res.status(201).json({
+      token,
+      user: {
+        id: newUser._id,
+        username: newUser.username,
+        email: newUser.email,
+        role: memberRole.name,
+        permissions: memberRole.permissions || [],
+      },
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error en registro:", error);
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -93,4 +116,15 @@ const logout = async (req, res) => {
   }
 };
 
-module.exports = { register, login, logout, refreshToken };
+const resetPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const resetPasswordService = require("../services/auth/reset-password.service");
+    const result = await resetPasswordService(email);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+module.exports = { register, login, logout, refreshToken, resetPassword };

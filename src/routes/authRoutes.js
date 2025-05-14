@@ -5,11 +5,48 @@ const {
   logout,
   refreshToken,
   me,
+  resetPassword,
 } = require("../controllers/authController");
 const authMiddleware = require("../middlewares/authMiddleware");
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Registra un nuevo usuario
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *                 example: Juan
+ *               lastName:
+ *                 type: string
+ *                 example: Pérez
+ *               email:
+ *                 type: string
+ *                 example: juan@ejemplo.com
+ *               password:
+ *                 type: string
+ *                 example: 123456
+ *               terms:
+ *                 type: boolean
+ *                 example: true
+ *     responses:
+ *       201:
+ *         description: Usuario registrado correctamente
+ *       400:
+ *         description: El usuario ya existe
+ *       500:
+ *         description: Error interno del servidor
+ */
 router.post("/register", register);
 
 /**
@@ -78,5 +115,31 @@ router.post("/logout", logout);
  *         description: Error interno del servidor
  */
 router.get("/refresh-token", refreshToken);
+
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Solicita un restablecimiento de contraseña
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: usuario@ejemplo.com
+ *     responses:
+ *       200:
+ *         description: Se ha enviado un correo con las instrucciones
+ *       400:
+ *         description: Error en la solicitud
+ *       500:
+ *         description: Error interno del servidor
+ */
+router.post("/reset-password", resetPassword);
 
 module.exports = router;

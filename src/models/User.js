@@ -29,6 +29,8 @@ const UserSchema = new mongoose.Schema(
     suspendedReason: { type: String, default: null },
     suspendedUntil: { type: Date, default: null },
     deletedAt: { type: Date, default: null }, // Soft delete
+    resetPasswordToken: String,
+    resetPasswordExpires: Date,
   },
   {
     timestamps: true,

@@ -55,14 +55,16 @@ export function SignUpForm(): React.JSX.Element {
     async (values: Values): Promise<void> => {
       setIsPending(true);
 
-      const { error } = await authClient.signUp(values);
+      const { data, error } = await authClient.signUp(values);
 
       if (error) {
         setError('root', { type: 'server', message: error });
         setIsPending(false);
         return;
       }
-      router.refresh();
+
+      // Redirigir al dashboard después del registro exitoso
+      router.push('/dashboard');
     },
     [router, setError],
   );

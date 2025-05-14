@@ -35,10 +35,14 @@ interface ApiResponse<T> {
 }
 
 class AuthClient {
-  async signUp(params: SignUpParams): Promise<{ error?: string }> {
+  async signUp(params: SignUpParams): Promise<{ data?: User; error?: string }> {
     try {
-      await api.post('/auth/register', params);
-      return {}; // Retornar vacío si la petición es exitosa
+      const { data } = await api.post<AuthResponse>('/auth/register', params);
+
+      // Guardar el token en localStorage
+      localStorage.setItem('auth_token', data.token);
+
+      return { data: data.user };
     } catch (error: any) {
       return { error: error.response?.data?.message || 'Error al registrarse' };
     }
