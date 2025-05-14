@@ -17,9 +17,14 @@ export default function Page(): React.JSX.Element {
   const fetchAllUsers = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:5000/api/users/all', {
-        method: 'GET',
-      });
+      const res = await fetch(
+        process.env.NEXT_PUBLIC_ENV === 'testing'
+          ? `${process.env.NEXT_TESTING_API_URL}/users/all`
+          : `${process.env.NEXT_PUBLIC_API_URL}/users/all`,
+        {
+          method: 'GET',
+        },
+      );
 
       if (!res.ok) {
         throw new Error('No se pudo obtener la lista de usuarios');

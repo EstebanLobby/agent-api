@@ -18,8 +18,8 @@ const modalStyle = {
 };
 export function getBaseUrl() {
   return process.env.NEXT_PUBLIC_ENV === 'testing'
-    ? process.env.NEXT_PUBLIC_API_URL
-    : 'https://checkia.lobby-digital.com';
+    ? process.env.NEXT_TESTING_API_URL
+    : process.env.NEXT_PUBLIC_API_URL;
 }
 
 export function WhatsAppModal(): React.JSX.Element {

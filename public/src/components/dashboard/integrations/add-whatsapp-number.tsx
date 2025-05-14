@@ -48,8 +48,8 @@ export function AddWhatsAppNumber({ open, onClose }: AddWhatsAppNumberProps) {
 
     const socket = io(
       process.env.NEXT_PUBLIC_ENV === 'testing'
-        ? process.env.NEXT_PUBLIC_API_URL
-        : 'https://checkia.lobby-digital.com',
+        ? process.env.NEXT_TESTING_API_URL
+        : process.env.NEXT_PUBLIC_API_URL,
       {
         path: '/socket.io',
         transports: ['polling', 'websocket'],

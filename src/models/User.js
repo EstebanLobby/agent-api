@@ -31,6 +31,14 @@ const UserSchema = new mongoose.Schema(
     deletedAt: { type: Date, default: null }, // Soft delete
     resetPasswordToken: String,
     resetPasswordExpires: Date,
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
   {
     timestamps: true,
@@ -38,6 +46,12 @@ const UserSchema = new mongoose.Schema(
     toObject: { virtuals: true },
   }
 );
+
+// Middleware para actualizar updatedAt
+UserSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
+});
 
 // Relación virtual con las sesiones
 UserSchema.virtual("sessions", {

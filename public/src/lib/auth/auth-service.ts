@@ -1,21 +1,16 @@
 import { api } from '@/lib/api';
 import { User } from '../../types/user';
-
-interface AuthResponse {
-  user: User;
-  token: string;
-}
+import { AuthResponse } from './auth-client';
 
 // Iniciar sesión
 export const signIn = async (email: string, password: string): Promise<AuthResponse> => {
   try {
-    // Asegúrate de enviar un objeto plano
     const credentials = {
-      email, // o simplemente `email`
-      password, // o `password`
+      email,
+      password,
     };
 
-    const response = await api.post<AuthResponse>('/auth/sign-in', credentials, {
+    const response = await api.post<AuthResponse>('/auth/login', credentials, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -30,15 +25,19 @@ export const signIn = async (email: string, password: string): Promise<AuthRespo
 // Registrar usuario
 export const signUp = async (
   email: string,
-  name: string,
+  username: string,
   password: string,
 ): Promise<AuthResponse> => {
-  const response = await api.post<AuthResponse>('/auth/sign-up', {
-    email,
-    name,
-    password,
-  });
-  return response.data;
+  try {
+    const response = await api.post<AuthResponse>('/auth/register', {
+      email,
+      username,
+      password,
+    });
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || 'Error en el registro');
+  }
 };
 
 // Obtener perfil de usuario (validar token)

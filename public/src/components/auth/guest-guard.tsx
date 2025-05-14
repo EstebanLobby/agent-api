@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Alert } from '@mui/material';
 import { logger } from '@/lib/default-logger';
 import { useUser } from '@/hooks/use-user';
@@ -12,6 +12,7 @@ export interface GuestGuardProps {
 
 export function GuestGuard({ children }: GuestGuardProps): React.JSX.Element | null {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, error, isLoading } = useUser();
   const [isChecking, setIsChecking] = React.useState<boolean>(true);
 
@@ -38,8 +39,7 @@ export function GuestGuard({ children }: GuestGuardProps): React.JSX.Element | n
     checkPermissions().catch(() => {
       // noop
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Expected
-  }, [user, error, isLoading]);
+  }, [user, error, isLoading, pathname, checkPermissions]);
 
   if (isChecking) {
     return null;

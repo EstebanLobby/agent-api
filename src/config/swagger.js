@@ -11,7 +11,9 @@ const options = {
     },
     servers: [
       {
-        url: "http://localhost:5000",
+        url: process.env.NEXT_PUBLIC_ENV === 'testing'
+        ? process.env.NEXT_TESTING_API_URL
+        : process.env.NEXT_PUBLIC_API_URL,
         description: "Servidor Local",
       },
     ],
@@ -44,11 +46,6 @@ const swaggerDocs = (app) => {
     res.setHeader("Content-Type", "application/json");
     res.send(swaggerSpec);
   });
-
-  console.log("📄 Swagger Docs disponible en: http://localhost:5000/api-docs");
-  console.log(
-    "📄 Swagger JSON disponible en: http://localhost:5000/api-docs.json"
-  );
 };
 
 module.exports = swaggerDocs;

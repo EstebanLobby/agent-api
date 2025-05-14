@@ -20,13 +20,20 @@ export interface SignInWithPasswordParams {
   password: string;
 }
 
-export interface ResetPasswordParams {
-  email: string;
-}
-
-interface AuthResponse {
+export interface AuthResponse {
   token: string;
   user: User;
+}
+
+export interface ResetPasswordParams {
+  email?: string;
+  token?: string;
+  newPassword?: string;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+  resetUrl?: string;
 }
 
 interface ApiResponse<T> {
@@ -35,16 +42,12 @@ interface ApiResponse<T> {
 }
 
 class AuthClient {
-  async signUp(params: SignUpParams): Promise<{ data?: User; error?: string }> {
+  async signUp(params: SignUpParams): Promise<{ data?: AuthResponse; error?: string }> {
     try {
-      const { data } = await api.post<AuthResponse>('/auth/register', params);
-
-      // Guardar el token en localStorage
-      localStorage.setItem('auth_token', data.token);
-
-      return { data: data.user };
+      const response = await api.post<AuthResponse>('/auth/register', params);
+      return { data: response.data };
     } catch (error: any) {
-      return { error: error.response?.data?.message || 'Error al registrarse' };
+      return { error: error.response?.data?.message || 'Error en el registro' };
     }
   }
 
@@ -52,40 +55,30 @@ class AuthClient {
     return { error: 'Autenticación social no implementada' };
   }
 
-  async signInWithPassword(
-    params: SignInWithPasswordParams,
-  ): Promise<{ data?: User; error?: string }> {
-    try {
-      const { data } = await api.post<AuthResponse>('/auth/login', params, {
-        headers: {
-          'Content-Type': 'application/json', // Asegura el header
-        },
-      });
-
-      localStorage.setItem('auth_token', data.token);
-      return { data: data.user };
-    } catch (error: any) {
-      // Mejor manejo de errores
-      if (error.response) {
-        // El servidor respondió con un status fuera de 2xx
-        return {
-          error:
-            error.response.data?.message || error.response.statusText || 'Error de autenticación',
-        };
-      }
-      if (error.request) {
-        // La solicitud fue hecha pero no hubo respuesta
-        return { error: 'No se recibió respuesta del servidor' };
-      }
-      // Error al configurar la solicitud
-      return { error: 'Error al configurar la solicitud' };
-    }
+  async signInWithPassword(params: SignInWithPasswordParams) {
+    return api.post<AuthResponse>('/auth/login', params, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   }
 
-  async resetPassword(params: ResetPasswordParams): Promise<{ error?: string }> {
+  async resetPassword(params: ResetPasswordParams): Promise<{ data?: any; error?: string }> {
     try {
-      await api.post('/auth/reset-password', params);
-      return {};
+      if (params.token && params.newPassword) {
+        // Actualizar contraseña con token
+        const response = await api.post('/auth/reset-password', {
+          token: params.token,
+          newPassword: params.newPassword,
+        });
+        return { data: response.data };
+      }
+      if (params.email) {
+        // Solicitar reset de contraseña
+        const response = await api.post('/auth/reset-password', { email: params.email });
+        return { data: response.data };
+      }
+      return { error: 'Parámetros inválidos' };
     } catch (error: any) {
       return { error: error.response?.data?.message || 'Error al restablecer la contraseña' };
     }

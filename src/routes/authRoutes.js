@@ -4,8 +4,8 @@ const {
   login,
   logout,
   refreshToken,
-  me,
-  resetPassword,
+  requestPasswordReset,
+  resetPassword
 } = require("../controllers/authController");
 const authMiddleware = require("../middlewares/authMiddleware");
 
@@ -76,7 +76,7 @@ router.post("/register", register);
  *       500:
  *         description: Error interno del servidor
  */
-router.post("/sign-in", login);
+router.post("/login", login);
 
 /**
  * @swagger
@@ -114,11 +114,11 @@ router.post("/logout", logout);
  *       500:
  *         description: Error interno del servidor
  */
-router.get("/refresh-token", refreshToken);
+router.post("/refresh-token", refreshToken);
 
 /**
  * @swagger
- * /api/auth/reset-password:
+ * /api/auth/request-password-reset:
  *   post:
  *     summary: Solicita un restablecimiento de contraseña
  *     tags: [Auth]
@@ -137,6 +137,35 @@ router.get("/refresh-token", refreshToken);
  *         description: Se ha enviado un correo con las instrucciones
  *       400:
  *         description: Error en la solicitud
+ *       500:
+ *         description: Error interno del servidor
+ */
+router.post("/request-password-reset", requestPasswordReset);
+
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Restablece la contraseña con el token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 example: abc123...
+ *               newPassword:
+ *                 type: string
+ *                 example: nuevaContraseña123
+ *     responses:
+ *       200:
+ *         description: Contraseña actualizada correctamente
+ *       400:
+ *         description: Token inválido o expirado
  *       500:
  *         description: Error interno del servidor
  */
