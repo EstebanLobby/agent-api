@@ -15,6 +15,6 @@ module.exports = {
       },
       from: process.env.SMTP_FROM || 'noreply@tuapp.com',
     },
-    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3001',
+    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
   };
   
