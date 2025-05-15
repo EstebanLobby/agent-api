@@ -12,6 +12,7 @@ async function handleQR(io, qr, userId, session, qrCodes, QR_REFRESH_TIME) {
     const qrBase64 = await qrcode.toDataURL(qr);
     io.emit("qr_update", qrBase64);
     qrcodeTerminal.generate(qr, { small: true });
+    console.log("QR generado:", qr);
   } catch (err) {
     io.emit("qr_error", "Error al generar el QR.");
   }

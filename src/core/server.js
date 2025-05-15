@@ -64,12 +64,12 @@ swaggerDocs(app);
 const userRoutes = require("../routes/userRoutes");
 const authRoutes = require("../routes/authRoutes");
 const whatsappRoutes = require("../routes/whatsappRoutes");
+const adminWhatsappRoutes = require("../routes/adminWhatsappRoutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/whatsapp", whatsappRoutes);
 app.use("/api/user", userRoutes);
-
-
+app.use("/api/admin/whatsapp", adminWhatsappRoutes);
 
 // 🔹 Inicializar el servicio de WhatsApp con `io`
 const { iniciarWhatsAppService } = require("../services/whatsapp/whatsapp.service");
