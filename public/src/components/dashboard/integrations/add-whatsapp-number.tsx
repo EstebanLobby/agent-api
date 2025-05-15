@@ -8,6 +8,10 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  TextField,
+  Box,
+  Typography,
+  Modal,
 } from '@mui/material';
 import { io } from 'socket.io-client';
 
@@ -22,18 +26,26 @@ export function AddWhatsAppNumber({ open, onClose }: AddWhatsAppNumberProps) {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [numero, setNumero] = useState('');
 
   useEffect(() => {
     if (!open) {
       setQrCode(null);
       setError(null);
+      setNumero('');
+      return undefined;
+    }
+
+    if (!numero) {
+      setError('Por favor ingresa un número de WhatsApp');
+      setLoading(false);
       return undefined;
     }
 
     setLoading(true);
 
     whatsappClient
-      .startSession()
+      .startSession(numero)
       .then((response) => {
         if (response.error) {
           setError('Error al iniciar sesión. Intenta nuevamente.');
@@ -78,29 +90,54 @@ export function AddWhatsAppNumber({ open, onClose }: AddWhatsAppNumberProps) {
     return () => {
       socket.disconnect();
     };
-  }, [open, onClose]);
+  }, [open, onClose, numero]);
 
   return (
-    <Dialog open={open} onClose={onClose}>
-      <DialogTitle>Añadir Nueva Integración</DialogTitle>
-      <DialogContent
-        sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}
+    <Modal open={open} onClose={onClose}>
+      <Box
+        sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 400,
+          bgcolor: 'background.paper',
+          boxShadow: 24,
+          p: 4,
+          borderRadius: 2,
+        }}
       >
-        <p>Escanea este código QR para vincular WhatsApp:</p>
+        <Typography variant="h6" component="h2" gutterBottom>
+          Agregar número de WhatsApp
+        </Typography>
+
+        <TextField
+          fullWidth
+          label="Número de WhatsApp"
+          value={numero}
+          onChange={(e) => setNumero(e.target.value)}
+          placeholder="+5491123456789"
+          margin="normal"
+          error={!!error}
+          helperText={error}
+        />
 
         {loading ? (
-          <CircularProgress />
-        ) : error ? (
-          <p style={{ color: 'red' }}>{error}</p>
-        ) : qrCode ? (
-          <img src={qrCode} alt="Código QR para WhatsApp" style={{ width: 400, height: 400 }} />
-        ) : (
-          <p>Esperando QR...</p>
-        )}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
-      </DialogActions>
-    </Dialog>
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+            <CircularProgress />
+          </Box>
+        ) : null}
+
+        {qrCode ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+            <img src={qrCode} alt="QR Code" style={{ maxWidth: '100%' }} />
+          </Box>
+        ) : null}
+
+        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+          <Button onClick={onClose}>Cancelar</Button>
+        </Box>
+      </Box>
+    </Modal>
   );
 }

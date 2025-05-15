@@ -17,7 +17,7 @@ export default function UserProfile({ user }: UserProfileProps): React.JSX.Eleme
           <Typography color="text.secondary">Email: {user.email}</Typography>
           {user.phone ? <Typography color="text.secondary">{user.phone}</Typography> : null}
           <Typography color="text.secondary" variant="body2">
-            Rol-ID: {user.role}
+            Rol: {user.role.name}
           </Typography>
           {user.address ? (
             <Typography color="text.secondary" variant="body2">
