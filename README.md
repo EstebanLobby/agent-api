@@ -1,2 +1,3 @@
 # agent-api
-reedme
+Levantar front: npm run dev
+Levantar back: npm start
