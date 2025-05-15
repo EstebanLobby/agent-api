@@ -5,8 +5,8 @@ const RoleSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      unique: true, // El nombre del rol debe ser único
-      enum: ["admin", "member"], // Roles predefinidos
+      unique: true,
+      enum: ["admin", "member", "owner"],
     },
     permissions: [
       {
@@ -21,7 +21,7 @@ const RoleSchema = new mongoose.Schema(
       },
     ],
   },
-  { timestamps: true } // Añade campos createdAt y updatedAt automáticamente
+  { timestamps: true } 
 );
 
 module.exports = mongoose.model("Role", RoleSchema);

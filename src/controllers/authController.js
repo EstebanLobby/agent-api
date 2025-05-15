@@ -195,10 +195,11 @@ const login = async (req, res) => {
     res.status(200).json({
       token,
       user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: role.name,
+        ...user,
+        role: {
+          id: role._id,
+          name: role.name
+        },
         permissions: role.permissions || [],
       },
     });

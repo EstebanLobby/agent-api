@@ -131,7 +131,7 @@ export function SideNav(): React.JSX.Element {
     );
   }
 
-  const filteredNavItems = getFilteredNavItems(user.role);
+  const filteredNavItems = getFilteredNavItems(user?.role?.name);
   return (
     <Box
       sx={{

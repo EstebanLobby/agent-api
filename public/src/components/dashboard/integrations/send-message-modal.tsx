@@ -11,8 +11,9 @@ import {
   FormControl,
   InputLabel,
 } from '@mui/material';
-
+import { useUser } from '@/hooks/use-user';
 import { whatsappClient } from '@/lib/whatsappApi/whatsapp-api';
+import type { WhatsAppSession } from '@/types/whatsapp';
 
 interface SendMessageModalProps {
   open: boolean;
@@ -20,80 +21,59 @@ interface SendMessageModalProps {
   initialNumber?: string;
 }
 
-// Lista de países con sus códigos
-const countries = [
-  { code: '549', name: 'Argentina' },
-  { code: '55', name: 'Brasil' },
-  { code: '56', name: 'Chile' },
-  { code: '57', name: 'Colombia' },
-  { code: '58', name: 'Venezuela' },
-  { code: '51', name: 'Perú' },
-  { code: '52', name: 'México' },
-  { code: '1', name: 'Estados Unidos/Canadá' },
-  // Agrega más países según sea necesario
-];
-
-export function SendMessageModal({ open, onClose, initialNumber }: SendMessageModalProps) {
-  const [mensaje, setMensaje] = useState('');
+function SendMessageModal({ open, onClose, initialNumber }: SendMessageModalProps) {
+  const [number, setNumber] = useState(initialNumber || '');
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedCountry, setSelectedCountry] = useState('549'); // Argentina por defecto
-  const [rawNumber, setRawNumber] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<WhatsAppSession[]>([]);
+  const [selectedSession, setSelectedSession] = useState<string>('');
+  const { user } = useUser();
+  const isOwner = user?.role === 'owner';
 
-  useEffect(() => {
-    if (initialNumber) {
-      // Si el número inicial incluye el código de país, extraerlo
-      const match = initialNumber.match(/^\+?(\d{1,3})(\d+)$/);
-      if (match) {
-        const [, countryCode, number] = match;
-        setSelectedCountry(countryCode);
-        setRawNumber(number);
-      } else {
-        setRawNumber(initialNumber);
-      }
-    }
-  }, [initialNumber]);
-
-  const handleSend = async () => {
-    // Construye el número completo con código de país
-    const fullNumber = `${selectedCountry}${rawNumber.replace(/\D/g, '')}`;
-
-    if (!rawNumber.trim() || !mensaje.trim()) {
-      setError('Por favor, complete ambos campos.');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
+  const loadSessions = async () => {
     try {
-      const response = await whatsappClient.sendMessage({
-        destino: fullNumber,
-        mensaje,
-      });
-
-      if (response.success) {
-        setMensaje('');
-        setRawNumber('');
-        onClose();
-      } else {
-        setError(response.error || 'Error desconocido al enviar el mensaje.');
+      const { sessions: activeSessions } = await whatsappClient.getSessions();
+      if (activeSessions) {
+        setSessions(activeSessions);
       }
     } catch (err) {
-      setError('Error al enviar el mensaje.');
+      console.error('Error cargando sesiones:', err);
     }
-
-    setLoading(false);
   };
 
-  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Elimina cualquier carácter que no sea dígito
-    const digitsOnly = e.target.value.replace(/\D/g, '');
-    setRawNumber(digitsOnly);
+  useEffect(() => {
+    if (open && isOwner) {
+      loadSessions();
+    }
+  }, [open, isOwner]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const result = await whatsappClient.sendMessage({
+        destino: number,
+        mensaje: message,
+        sessionId: isOwner ? selectedSession : undefined,
+      });
+
+      if (result.error) {
+        setErrorMessage(result.error);
+      } else {
+        onClose();
+      }
+    } catch (err) {
+      setErrorMessage('Error al enviar el mensaje');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <Modal open={open} onClose={onClose} aria-labelledby="send-message-modal">
+    <Modal open={open} onClose={onClose}>
       <Box
         sx={{
           position: 'absolute',
@@ -103,72 +83,75 @@ export function SendMessageModal({ open, onClose, initialNumber }: SendMessageMo
           width: 400,
           bgcolor: 'background.paper',
           boxShadow: 24,
-          p: 3,
+          p: 4,
           borderRadius: 2,
         }}
       >
-        <Typography variant="h6" gutterBottom>
-          Enviar Mensaje
+        <Typography variant="h6" component="h2" gutterBottom>
+          Enviar Mensaje de WhatsApp
         </Typography>
 
-        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-          <FormControl sx={{ minWidth: 120 }}>
-            <InputLabel id="country-select-label">País</InputLabel>
-            <Select
-              labelId="country-select-label"
-              value={selectedCountry}
-              label="País"
-              onChange={(e) => setSelectedCountry(e.target.value)}
-            >
-              {countries.map((country) => (
-                <MenuItem key={country.code} value={country.code}>
-                  {country.name} (+{country.code})
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+        <form onSubmit={handleSubmit}>
+          {isOwner ? (
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Sesión de WhatsApp</InputLabel>
+              <Select
+                value={selectedSession}
+                onChange={(e) => setSelectedSession(e.target.value)}
+                label="Sesión de WhatsApp"
+                required
+              >
+                {sessions.map((session) => (
+                  <MenuItem key={session._id} value={session._id}>
+                    {session.numero} ({session.status})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          ) : null}
 
           <TextField
-            label="Número"
             fullWidth
-            value={rawNumber}
-            onChange={handleNumberChange}
-            placeholder="Ej: 1122334455"
+            label="Número de teléfono"
+            value={number}
+            onChange={(e) => setNumber(e.target.value)}
+            margin="normal"
+            required
+            placeholder="+5491123456789"
           />
-        </Box>
 
-        <Typography variant="body2" sx={{ mb: 1 }}>
-          Número completo: +{selectedCountry}
-          {rawNumber}
-        </Typography>
+          <TextField
+            fullWidth
+            label="Mensaje"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            margin="normal"
+            required
+            multiline
+            rows={4}
+          />
 
-        <TextField
-          label="Mensaje"
-          fullWidth
-          multiline
-          rows={4}
-          margin="normal"
-          value={mensaje}
-          onChange={(e) => {
-            setMensaje(e.target.value);
-          }}
-        />
+          {errorMessage ? (
+            <Typography color="error" sx={{ mt: 2 }}>
+              {errorMessage}
+            </Typography>
+          ) : null}
 
-        {error ? (
-          <Typography variant="body2" color="error" sx={{ mt: 1 }}>
-            {error}
-          </Typography>
-        ) : null}
-
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-          <Button variant="outlined" onClick={onClose} disabled={loading}>
-            Cancelar
-          </Button>
-          <Button variant="contained" onClick={handleSend} disabled={loading}>
-            {loading ? <CircularProgress size={24} /> : 'Enviar'}
-          </Button>
-        </Box>
+          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+            <Button onClick={onClose}>Cancelar</Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={loading}
+              startIcon={loading ? <CircularProgress size={20} /> : null}
+            >
+              Enviar
+            </Button>
+          </Box>
+        </form>
       </Box>
     </Modal>
   );
 }
+
+export { SendMessageModal };

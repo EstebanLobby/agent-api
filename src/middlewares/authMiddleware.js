@@ -38,7 +38,10 @@ const authMiddleware = async (req, res, next) => {
 
     req.user = {
       ...user.toObject(),
-      role: role.name,
+      role: {
+        id: role._id,
+        name: role.name
+      }
     };
     
     next();

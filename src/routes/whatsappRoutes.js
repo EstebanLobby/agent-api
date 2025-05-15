@@ -7,6 +7,7 @@ const {
   obtenerSesiones,
 } = require("../controllers/whatsappController");
 const authMiddleware = require("../middlewares/authMiddleware");
+const roleMiddleware = require("../middlewares/roleMiddleware");
 const router = express.Router();
 
 /**
@@ -16,7 +17,7 @@ const router = express.Router();
  *   description: API para interactuar con WhatsApp
  */
 
-// 🔹 Obtener código QR
+// �� Obtener código QR
 /**
  * @swagger
  * /api/whatsapp/qr:
@@ -116,6 +117,6 @@ router.get("/status", authMiddleware, verificarEstado);
  */
 router.post("/start", authMiddleware, iniciarSesion);
 
-router.get("/sesiones", authMiddleware, obtenerSesiones);
+router.get("/sesiones", authMiddleware, roleMiddleware(['admin', 'owner']), obtenerSesiones);
 
 module.exports = router;

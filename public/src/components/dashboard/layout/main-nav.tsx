@@ -19,6 +19,7 @@ import { UserPopover } from './user-popover';
 export function MainNav(): React.JSX.Element {
   const [openNav, setOpenNav] = React.useState<boolean>(false);
   const { user } = useUser();
+  console.log(user);
   const userPopover = usePopover<HTMLDivElement>();
   return (
     <React.Fragment>
@@ -67,7 +68,7 @@ export function MainNav(): React.JSX.Element {
           setOpenNav(false);
         }}
         open={openNav}
-        userRole={user?.role === 'admin' || user?.role === 'member' ? user.role : 'member'}
+        userRole={user?.role?.name as 'admin' | 'member' | 'owner'}
       />
     </React.Fragment>
   );

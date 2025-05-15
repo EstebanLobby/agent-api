@@ -1,4 +1,5 @@
 const Session = require("../models/Session");
+const User = require("../models/User");
 const {
   iniciarCliente,
   enviarMensaje,
@@ -71,7 +72,6 @@ const verificarEstado = async (req, res) => {
   }
 };
 
-
 // 🔹 Obtener todas las sesiones de WhatsApp en la base de datos
 const obtenerSesiones = async (req, res) => {
   try {
@@ -80,10 +80,17 @@ const obtenerSesiones = async (req, res) => {
       return res.status(401).json({ error: "Acceso no autorizado" });
     }
 
-    const userId = req.user; // Asegurar que req.user existe
-    console.log(`🔍 Buscando sesiones para el usuario: ${userId}`);
+    const userId = req.user;
+    const userRole = req.user.role;
 
-    const sesiones = await Session.find({ userId });
+    let sesiones;
+    if (userRole === 'owner') {
+      // Si es owner, obtener todas las sesiones activas
+      sesiones = await Session.find({ status: 'connected' });
+    } else {
+      // Si no es owner, solo obtener sus propias sesiones
+      sesiones = await Session.find({ userId });
+    }
 
     res.json(sesiones);
   } catch (error) {
@@ -95,15 +102,26 @@ const obtenerSesiones = async (req, res) => {
 // 🔹 Enviar mensaje desde una sesión activa
 const enviarMensajeWhatsApp = async (req, res) => {
   try {
-    const { destino, mensaje } = req.body;
+    const { destino, mensaje, sessionId } = req.body;
     if (!destino || !mensaje) {
-      return res
-        .status(400)
-        .json({ error: "Destino y mensaje son requeridos" });
+      return res.status(400).json({ error: "Destino y mensaje son requeridos" });
     }
-    const userId = req.user; // Asegurar que req.user existe
-    console.log(userId);
-    const respuesta = await enviarMensaje(userId, destino, mensaje);
+
+    const userId = req.user;
+    const userRole = req.user.role;
+
+    let targetUserId = userId;
+    
+    // Si es owner y proporciona un sessionId, usar esa sesión
+    if (userRole === 'owner' && sessionId) {
+      const session = await Session.findById(sessionId);
+      if (!session) {
+        return res.status(404).json({ error: "Sesión no encontrada" });
+      }
+      targetUserId = session.userId;
+    }
+
+    const respuesta = await enviarMensaje(targetUserId, destino, mensaje);
     res.json(respuesta);
   } catch (error) {
     res.status(500).json({ error: "Error enviando mensaje de WhatsApp" });
