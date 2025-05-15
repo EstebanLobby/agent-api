@@ -13,7 +13,14 @@ module.exports = async (email, password) => {
   if (!role) throw new Error("Rol no encontrado");
 
   return {
-    user,
-    role,
+    user: {
+      ...user.toObject(),
+    
+      role: {
+        id: role._id,
+        name: role.name
+      }
+    },
+    role
   };
 };

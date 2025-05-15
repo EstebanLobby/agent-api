@@ -112,7 +112,7 @@ function renderNavItems({
   );
 }
 
-const getFilteredNavItems = (role: 'admin' | 'member') => {
+const getFilteredNavItems = (role: 'admin' | 'member' | 'owner') => {
   return navItems.filter((item) => {
     const route = paths.dashboard[item.key as keyof typeof paths.dashboard];
 
@@ -123,12 +123,12 @@ const getFilteredNavItems = (role: 'admin' | 'member') => {
 export interface MobileNavProps {
   onClose?: () => void;
   open?: boolean;
-  userRole: string;
+  userRole: 'admin' | 'member' | 'owner';
 }
 
 export function MobileNav({ open, onClose, userRole }: MobileNavProps): React.JSX.Element {
   const pathname = usePathname();
-  const filteredNavItems = getFilteredNavItems(userRole as 'admin' | 'member');
+  const filteredNavItems = getFilteredNavItems(userRole as 'admin' | 'member' | 'owner');
   return (
     <Drawer
       PaperProps={{
