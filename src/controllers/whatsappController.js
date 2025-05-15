@@ -15,9 +15,20 @@ const iniciarSesion = async (req, res) => {
     return res.status(401).json({ error: "Acceso no autorizado" });
   }
 
-  const userId = req.user; // Asegurar que req.user existe
-  await iniciarCliente(userId);
-  res.json({ message: "Sesión iniciada correctamente" });
+  const userId = req.user;
+  const { numero } = req.body;
+
+  if (!numero) {
+    return res.status(400).json({ error: "El número de WhatsApp es requerido" });
+  }
+
+  try {
+    await iniciarCliente(userId, numero);
+    res.json({ message: "Sesión iniciada correctamente" });
+  } catch (error) {
+    console.error("❌ Error al iniciar sesión:", error);
+    res.status(500).json({ error: "Error al iniciar sesión de WhatsApp" });
+  }
 };
 
 // 🔹 Obtener código QR sin número
@@ -107,8 +118,10 @@ const enviarMensajeWhatsApp = async (req, res) => {
       return res.status(400).json({ error: "Destino y mensaje son requeridos" });
     }
 
-    const userId = req.user;
-    const userRole = req.user.role;
+    const userId = req.user._id || req.user; // Asegurarnos de obtener el ID
+    const userRole = req.user.role.name;
+    console.log(`🔍 Intentando enviar mensaje con userId: ${userId}`);
+    console.log(`🔍 Intentando enviar mensaje con el Role: ${userRole}`);
 
     let targetUserId = userId;
     
@@ -121,9 +134,17 @@ const enviarMensajeWhatsApp = async (req, res) => {
       targetUserId = session.userId;
     }
 
+    console.log(`🔍 Intentando enviar mensaje con userId: ${targetUserId}`);
     const respuesta = await enviarMensaje(targetUserId, destino, mensaje);
+    
+    if (respuesta.error) {
+      console.error(`❌ Error al enviar mensaje: ${respuesta.error}`);
+      return res.status(400).json(respuesta);
+    }
+    
     res.json(respuesta);
   } catch (error) {
+    console.error("❌ Error en enviarMensajeWhatsApp:", error);
     res.status(500).json({ error: "Error enviando mensaje de WhatsApp" });
   }
 };

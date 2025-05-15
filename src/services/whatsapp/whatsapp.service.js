@@ -4,7 +4,7 @@ const { handleQR } = require("./handlers/qr.handler");
 const { handleReady } = require("./handlers/ready.handler");
 const { handleMessage } = require("./handlers/message.handler");
 const { handleDisconnected } = require("./handlers/disconnected.handler");
-const { clients, addClient, removeClient } = require("./clientManager");
+const { clients, addClient, removeClient, getClient } = require("./clientManager");
 
 let io;
 const qrCodes = {};
@@ -14,12 +14,17 @@ function iniciarWhatsAppService(socketIo) {
   io = socketIo;
 }
 
-async function iniciarCliente(userId) {
+async function iniciarCliente(userId, numero) {
   if (clients[userId]) return clients[userId];
 
   let session = await Session.findOne({ userId });
   if (!session) {
-    session = await Session.create({ userId, sessionId: Date.now().toString(), status: "created" });
+    session = await Session.create({ 
+      userId, 
+      sessionId: Date.now().toString(), 
+      status: "created",
+      numero: numero 
+    });
   }
 
   const client = new Client({
@@ -51,4 +56,29 @@ async function getEstado(userId) {
   return session ? session.status : "not_found";
 }
 
-module.exports = { iniciarWhatsAppService, iniciarCliente, getQR, getEstado };
+async function enviarMensaje(userId, destino, mensaje) {
+  try {
+    const client = getClient(userId);
+    if (!client) {
+      return { error: "Cliente no está conectado" };
+    }
+
+    // Asegurarse de que el número tenga el formato correcto
+    const numeroFormateado = destino.startsWith('+') ? destino.substring(1) : destino;
+    const chatId = `${numeroFormateado}@c.us`;
+
+    await client.sendMessage(chatId, mensaje);
+    return { success: true };
+  } catch (error) {
+    console.error("❌ Error al enviar mensaje:", error);
+    return { error: "Error al enviar mensaje" };
+  }
+}
+
+module.exports = { 
+  iniciarWhatsAppService, 
+  iniciarCliente, 
+  getQR, 
+  getEstado,
+  enviarMensaje 
+};

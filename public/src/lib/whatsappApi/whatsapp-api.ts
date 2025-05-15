@@ -64,9 +64,9 @@ class WhatsAppClient {
   /**
    * Inicia una sesión de WhatsApp.
    */
-  async startSession(): Promise<{ success?: boolean; error?: string }> {
+  async startSession(numero: string): Promise<{ success?: boolean; error?: string }> {
     try {
-      await api.post(`${WhatsAppClient.BASE_PATH}/start`);
+      await api.post(`${WhatsAppClient.BASE_PATH}/start`, { numero });
       return { success: true };
     } catch (error: any) {
       return {
