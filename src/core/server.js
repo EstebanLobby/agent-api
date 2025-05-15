@@ -14,7 +14,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
   path: '/socket.io',
   cors: {
-    origin: "http://localhost:3001", // 🔹 Origen específico del frontend
+    origin: "http://localhost:3000", // 🔹 Origen específico del frontend
     methods: ["GET", "POST"],
     credentials: true
   },
@@ -46,7 +46,7 @@ connectDBAndStartServer();
 // 🚀 Configurar middlewares
 app.use(
   cors({
-    origin: "http://localhost:3001", // Origen específico del frontend
+    origin: "http://localhost:3000", // Origen específico del frontend
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization", "Accept"],
     credentials: true, // Importante para las cookies
