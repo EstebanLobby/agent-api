@@ -5,10 +5,11 @@ const {
   enviarMensaje,
   getQR,
   getEstado,
+  verificarEstadoSesion
 } = require("../services/whatsapp/whatsapp.service");
 const QRCode = require("qrcode");
 
-// 🔹 Iniciar sesión de WhatsApp sin ingresar número
+// 🔹 Iniciar sesión de WhatsApp
 const iniciarSesion = async (req, res) => {
   if (!req.user) {
     console.error("❌ req.user está undefined. Revisa el middleware.");
@@ -31,29 +32,21 @@ const iniciarSesion = async (req, res) => {
   }
 };
 
-// 🔹 Obtener código QR sin número
+// 🔹 Obtener código QR
 const obtenerQR = async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: "Acceso no autorizado" });
+    const userId = req.user;
+    const qr = getQR(userId);
+
+    if (!qr) {
+      return res.status(404).json({ error: "QR no disponible" });
     }
 
-    const userId = req.user._id;
-    console.log(`🔍 Solicitando QR para usuario: ${userId}`);
-
-    const qrResponse = getQR(userId);
-
-    if (qrResponse.error) {
-      return res.status(400).json({ error: qrResponse.error });
-    }
-
-    // Convertimos el QR en imagen base64
-    const qrImage = await QRCode.toDataURL(qrResponse.qr);
-
-    res.json({ qr: qrImage });
-  } catch (err) {
-    console.error("❌ Error generando QR:", err);
-    res.status(500).json({ error: "Error generando QR" });
+    const qrBase64 = await QRCode.toDataURL(qr);
+    res.json({ qr: qrBase64 });
+  } catch (error) {
+    console.error("❌ Error al obtener QR:", error);
+    res.status(500).json({ error: "Error al generar QR" });
   }
 };
 
@@ -65,25 +58,18 @@ const verificarEstado = async (req, res) => {
       return res.status(401).json({ error: "Acceso no autorizado" });
     }
 
-    const userId = req.user; // Asegurar que req.user existe
-    console.log(`🔍 Buscando sesiones para el usuario: ${userId}`);
+    const userId = req.user;
+    console.log(`🔍 Verificando estado para el usuario: ${userId}`);
 
-    const sessions = await Session.find({ userId });
-
-    if (!sessions || sessions.length === 0) {
-      console.log("⚠️ No se encontraron sesiones activas.");
-      return res.status(404).json({ message: "No hay sesiones activas" });
-    }
-
-    console.log(`✅ Sesiones encontradas: ${JSON.stringify(sessions)}`);
-    return res.json({ sessions }); // 🚀 Devolver como JSON correctamente
+    const estado = await verificarEstadoSesion(userId);
+    return res.json(estado);
   } catch (error) {
-    console.error("❌ Error al obtener sesiones:", error);
-    return res.status(500).json({ error: "Error obteniendo sesiones" });
+    console.error("❌ Error al verificar estado:", error);
+    return res.status(500).json({ error: "Error verificando estado" });
   }
 };
 
-// 🔹 Obtener todas las sesiones de WhatsApp en la base de datos
+// 🔹 Obtener todas las sesiones de WhatsApp
 const obtenerSesiones = async (req, res) => {
   try {
     if (!req.user) {
@@ -96,11 +82,25 @@ const obtenerSesiones = async (req, res) => {
 
     let sesiones;
     if (userRole === 'owner') {
-      // Si es owner, obtener todas las sesiones activas
-      sesiones = await Session.find({ status: 'connected' });
+      // Si es owner, obtener todas las sesiones y verificar su estado real
+      const todasLasSesiones = await Session.find({ status: 'connected' });
+      sesiones = await Promise.all(
+        todasLasSesiones.map(async (sesion) => {
+          const estado = await verificarEstadoSesion(sesion.userId);
+          return {
+            ...sesion.toObject(),
+            estadoReal: estado
+          };
+        })
+      );
     } else {
       // Si no es owner, solo obtener sus propias sesiones
-      sesiones = await Session.find({ userId });
+      const misSesiones = await Session.find({ userId });
+      const estado = await verificarEstadoSesion(userId);
+      sesiones = misSesiones.map(sesion => ({
+        ...sesion.toObject(),
+        estadoReal: estado
+      }));
     }
 
     res.json(sesiones);
@@ -118,23 +118,25 @@ const enviarMensajeWhatsApp = async (req, res) => {
       return res.status(400).json({ error: "Destino y mensaje son requeridos" });
     }
 
-    const userId = req.user._id || req.user; // Asegurarnos de obtener el ID
+    const userId = req.user._id || req.user;
     const userRole = req.user.role.name;
-    console.log(`🔍 Intentando enviar mensaje con userId: ${userId}`);
-    console.log(`🔍 Intentando enviar mensaje con el Role: ${userRole}`);
 
     let targetUserId = userId;
     
-    // Si es owner y proporciona un sessionId, usar esa sesión
-    if (userRole === 'admin') {
-      const session = await Session.findById("67f97f942fca2631ccd223ea");
+    // Si es admin y proporciona un sessionId, usar esa sesión
+    if (userRole === 'admin' && sessionId) {
+      const session = await Session.findById(sessionId);
       if (!session) {
         return res.status(404).json({ error: "Sesión no encontrada" });
+      }
+      // Verificar que la sesión esté realmente activa
+      const estado = await verificarEstadoSesion(session.userId);
+      if (!estado.isActive) {
+        return res.status(400).json({ error: "La sesión no está activa" });
       }
       targetUserId = session.userId;
     }
 
-    console.log(`🔍 Intentando enviar mensaje con userId: ${targetUserId}`);
     const respuesta = await enviarMensaje(targetUserId, destino, mensaje);
     
     if (respuesta.error) {

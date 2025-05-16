@@ -35,8 +35,18 @@ const connectDBAndStartServer = async () => {
     server.listen(process.env.PORT || 5000, "0.0.0.0", () => {
       console.log(`Server running on port ${process.env.PORT || 5000}`);
     });
+
+    // 🔹 Inicializar el servicio de WhatsApp con `io`
+    const { iniciarWhatsAppService, restaurarSesionesActivas } = require("../services/whatsapp/whatsapp.service");
+    iniciarWhatsAppService(io);
+
+    // 🔹 Restaurar sesiones activas de WhatsApp
+    console.log("🔄 Iniciando restauración de sesiones de WhatsApp...");
+    await restaurarSesionesActivas();
+    console.log("✅ Restauración de sesiones completada");
+
   } catch (error) {
-    console.error("❌ Error al conectar con MongoDB:", error);
+    console.error("❌ Error al iniciar el servidor:", error);
     process.exit(1);
   }
 };
@@ -72,10 +82,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/whatsapp", whatsappRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/admin/whatsapp", adminWhatsappRoutes);
-
-// 🔹 Inicializar el servicio de WhatsApp con `io`
-const { iniciarWhatsAppService } = require("../services/whatsapp/whatsapp.service");
-iniciarWhatsAppService(io);
 
 // 🔹 Inicializar los sockets
 require("../sockets/chatSocket")(io);

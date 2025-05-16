@@ -14,6 +14,32 @@ function iniciarWhatsAppService(socketIo) {
   io = socketIo;
 }
 
+// Función para restaurar sesiones activas
+async function restaurarSesionesActivas() {
+  try {
+    // Buscar todas las sesiones que estaban conectadas
+    const sesionesActivas = await Session.find({ status: "connected" });
+    console.log(`🔄 Intentando restaurar ${sesionesActivas.length} sesiones...`);
+
+    // Intentar reconectar cada sesión
+    for (const sesion of sesionesActivas) {
+      try {
+        console.log(`🔄 Restaurando sesión para usuario ${sesion.userId}...`);
+        await iniciarCliente(sesion.userId, sesion.numero);
+      } catch (error) {
+        console.error(`❌ Error al restaurar sesión ${sesion.sessionId}:`, error);
+        // Marcar la sesión como desconectada si falla la reconexión
+        await Session.findOneAndUpdate(
+          { sessionId: sesion.sessionId },
+          { status: "disconnected", updatedAt: new Date() }
+        );
+      }
+    }
+  } catch (error) {
+    console.error("❌ Error al restaurar sesiones:", error);
+  }
+}
+
 async function iniciarCliente(userId, numero) {
   if (clients[userId]) return clients[userId];
 
@@ -46,6 +72,27 @@ async function iniciarCliente(userId, numero) {
   return client;
 }
 
+// Función para verificar el estado real de una sesión
+async function verificarEstadoSesion(userId) {
+  try {
+    const session = await Session.findOne({ userId });
+    if (!session) return { status: "not_found", isActive: false };
+
+    const client = getClient(userId);
+    const isActive = client ? await client.getState() : false;
+
+    return {
+      status: session.status,
+      isActive: !!isActive,
+      numero: session.numero,
+      lastUpdate: session.updatedAt
+    };
+  } catch (error) {
+    console.error(`❌ Error al verificar estado de sesión para ${userId}:`, error);
+    return { status: "error", isActive: false };
+  }
+}
+
 function getQR(userId) {
   if (!qrCodes[userId]) return { error: "QR no disponible" };
   return { qr: qrCodes[userId].qr };
@@ -75,10 +122,12 @@ async function enviarMensaje(userId, destino, mensaje) {
   }
 }
 
-module.exports = { 
-  iniciarWhatsAppService, 
-  iniciarCliente, 
-  getQR, 
+module.exports = {
+  iniciarWhatsAppService,
+  iniciarCliente,
+  enviarMensaje,
+  getQR,
   getEstado,
-  enviarMensaje 
+  restaurarSesionesActivas,
+  verificarEstadoSesion
 };
