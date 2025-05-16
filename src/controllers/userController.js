@@ -8,7 +8,8 @@ const getAllUsers = async (req, res) => {
   try {
     const users = await User.find()
       .select("-password") // Excluye la contraseña
-      .populate("sessions"); // Obtiene las sesiones del usuario
+      .populate("role", "name") // Obtiene el rol del usuario
+      .lean();
 
     res.status(200).json(users);
   } catch (error) {
@@ -40,6 +41,37 @@ const getUserProfile = async (req, res) => {
   }
 };
 
+// 🔥 Actualizar el rol de un usuario (solo ADMIN)
+const updateUserRole = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { roleId } = req.body;
+
+    // Verificar que el rol existe
+    const role = await Role.findById(roleId);
+    if (!role) {
+      return res.status(404).json({ message: "Rol no encontrado" });
+    }
+
+    // Actualizar el rol del usuario
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { role: roleId },
+      { new: true }
+    ).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    res.status(200).json({
+      message: "Rol actualizado correctamente",
+      user
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
 const getProfile = async (req, res) => {
   try {
@@ -83,5 +115,10 @@ const editProfile = async (req, res) => {
   }
 };
 
-
-module.exports = { getAllUsers, getUserProfile, getProfile, editProfile};
+module.exports = {
+  getAllUsers,
+  getUserProfile,
+  getProfile,
+  editProfile,
+  updateUserRole,
+};

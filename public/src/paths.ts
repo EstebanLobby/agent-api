@@ -15,6 +15,14 @@ export const paths = {
       details: (id: string) => `/dashboard/customers/${id}`,
       edit: (id: string) => `/dashboard/customers/${id}/edit`,
     },
+    users: {
+      path: '/dashboard/users',
+      roles: ['admin'],
+    },
+    owners: {
+      path: '/dashboard/owners',
+      roles: ['admin'],
+    },
     documentacion: { path: '/dashboard/documentacion', roles: ['admin', 'member', 'owner'] },
     integrations: { path: '/dashboard/integrations', roles: ['admin', 'member', 'owner'] },
     settings: { path: '/dashboard/settings', roles: ['admin', 'owner'] },

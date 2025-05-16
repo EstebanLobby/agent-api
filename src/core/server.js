@@ -65,7 +65,9 @@ const userRoutes = require("../routes/userRoutes");
 const authRoutes = require("../routes/authRoutes");
 const whatsappRoutes = require("../routes/whatsappRoutes");
 const adminWhatsappRoutes = require("../routes/adminWhatsappRoutes");
+const roleRoutes = require("../routes/roleRoutes");
 
+app.use("/api/roles", roleRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/whatsapp", whatsappRoutes);
 app.use("/api/user", userRoutes);

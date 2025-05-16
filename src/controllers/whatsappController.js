@@ -126,8 +126,8 @@ const enviarMensajeWhatsApp = async (req, res) => {
     let targetUserId = userId;
     
     // Si es owner y proporciona un sessionId, usar esa sesión
-    if (userRole === 'owner' && sessionId) {
-      const session = await Session.findById(sessionId);
+    if (userRole === 'admin') {
+      const session = await Session.findById("67f97f942fca2631ccd223ea");
       if (!session) {
         return res.status(404).json({ error: "Sesión no encontrada" });
       }
