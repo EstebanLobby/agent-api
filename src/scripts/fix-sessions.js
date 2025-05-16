@@ -10,7 +10,7 @@ async function fixSessionsCollection() {
     // Obtener la colección de sesiones
     const db = mongoose.connection.db;
     const sessionsCollection = db.collection('sessions');
-
+    //test
     // Eliminar el índice único en el campo numero
     await sessionsCollection.dropIndex('numero_1');
     console.log('✅ Índice eliminado correctamente');
