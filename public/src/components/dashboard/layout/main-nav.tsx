@@ -2,12 +2,9 @@
 
 import * as React from 'react';
 import Avatar from '@mui/material/Avatar';
-import Badge from '@mui/material/Badge';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
-import Tooltip from '@mui/material/Tooltip';
-import { Bell as BellIcon } from '@phosphor-icons/react/dist/ssr/Bell';
 import { List as ListIcon } from '@phosphor-icons/react/dist/ssr/List';
 
 import { usePopover } from '@/hooks/use-popover';
@@ -19,7 +16,6 @@ import { UserPopover } from './user-popover';
 export function MainNav(): React.JSX.Element {
   const [openNav, setOpenNav] = React.useState<boolean>(false);
   const { user } = useUser();
-  console.log(user);
   const userPopover = usePopover<HTMLDivElement>();
   return (
     <React.Fragment>
@@ -52,8 +48,8 @@ export function MainNav(): React.JSX.Element {
             <Avatar
               onClick={userPopover.handleOpen}
               ref={userPopover.anchorRef}
-              src="/assets/avatar.png"
-              sx={{ cursor: 'pointer' }}
+              src={user?.photo}
+              sx={{ cursor: 'pointer', width: 40, height: 40 }}
             />
           </Stack>
         </Stack>
