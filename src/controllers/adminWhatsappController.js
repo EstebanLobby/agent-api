@@ -1,6 +1,7 @@
 const { getClient } = require("../services/whatsapp/clientManager");
 const Session = require("../models/Session");
 const User = require("../models/User");
+const { enviarMensaje } = require("../services/whatsapp/whatsapp.service");
 
 // Obtener todas las sesiones activas
 const obtenerSesionesActivas = async (req, res) => {
@@ -36,16 +37,14 @@ const enviarMensajeComoUsuario = async (req, res) => {
       return res.status(404).json({ error: "Sesión no encontrada" });
     }
 
-    // Obtener el cliente de WhatsApp
-    const client = getClient(userId);
-    if (!client) {
-      return res.status(400).json({ error: "Cliente no está conectado" });
-    }
-
-    // Enviar el mensaje
-    await client.sendMessage(`${numero}@c.us`, mensaje);
+    // Usar el servicio de envío de mensajes que ya funciona
+    const respuesta = await enviarMensaje(userId, numero, mensaje);
     
-    res.json({ success: true, message: "Mensaje enviado correctamente" });
+    if (respuesta.error) {
+      return res.status(400).json(respuesta);
+    }
+    
+    res.json(respuesta);
   } catch (error) {
     console.error("❌ Error al enviar mensaje:", error);
     res.status(500).json({ error: "Error al enviar mensaje" });

@@ -8,6 +8,7 @@ const {
   verificarEstadoSesion
 } = require("../services/whatsapp/whatsapp.service");
 const QRCode = require("qrcode");
+const Role = require("../models/Role");
 
 // 🔹 Iniciar sesión de WhatsApp
 const iniciarSesion = async (req, res) => {
@@ -16,13 +17,12 @@ const iniciarSesion = async (req, res) => {
     return res.status(401).json({ error: "Acceso no autorizado" });
   }
 
-  const userId = req.user;
+  const userId = req.user.id;
   const { numero } = req.body;
 
   if (!numero) {
     return res.status(400).json({ error: "El número de WhatsApp es requerido" });
   }
-
   try {
     await iniciarCliente(userId, numero);
     res.json({ message: "Sesión iniciada correctamente" });
@@ -58,7 +58,7 @@ const verificarEstado = async (req, res) => {
       return res.status(401).json({ error: "Acceso no autorizado" });
     }
 
-    const userId = req.user;
+    const userId = req.user.id;
     console.log(`🔍 Verificando estado para el usuario: ${userId}`);
 
     const estado = await verificarEstadoSesion(userId);
@@ -78,11 +78,30 @@ const obtenerSesiones = async (req, res) => {
     }
 
     const userId = req.user;
-    const userRole = req.user.role;
+    const userRole = req.user.role.name;
 
     let sesiones;
     if (userRole === 'owner') {
-      // Si es owner, obtener todas las sesiones y verificar su estado real
+      // Si es owner, obtener las sesiones de sus usuarios registrados
+      const ownerRole = await Role.findOne({ name: 'owner' }).populate('users');
+      const ownerUsers = ownerRole.users.map(user => user._id);
+      
+      const sesionesDeUsuarios = await Session.find({ 
+        userId: { $in: ownerUsers },
+        status: 'connected'
+      }).populate('userId', 'username email');
+
+      sesiones = await Promise.all(
+        sesionesDeUsuarios.map(async (sesion) => {
+          const estado = await verificarEstadoSesion(sesion.userId);
+          return {
+            ...sesion.toObject(),
+            estadoReal: estado
+          };
+        })
+      );
+    } else if (userRole === 'admin') {
+      // Si es admin, obtener todas las sesiones
       const todasLasSesiones = await Session.find({ status: 'connected' });
       sesiones = await Promise.all(
         todasLasSesiones.map(async (sesion) => {
@@ -94,7 +113,7 @@ const obtenerSesiones = async (req, res) => {
         })
       );
     } else {
-      // Si no es owner, solo obtener sus propias sesiones
+      // Si no es owner ni admin, solo obtener sus propias sesiones
       const misSesiones = await Session.find({ userId });
       const estado = await verificarEstadoSesion(userId);
       sesiones = misSesiones.map(sesion => ({
@@ -113,6 +132,10 @@ const obtenerSesiones = async (req, res) => {
 // 🔹 Enviar mensaje desde una sesión activa
 const enviarMensajeWhatsApp = async (req, res) => {
   try {
+    const clients = global.clients
+
+    console.log('clientes',clients)
+    
     const { destino, mensaje, sessionId } = req.body;
     if (!destino || !mensaje) {
       return res.status(400).json({ error: "Destino y mensaje son requeridos" });
@@ -151,10 +174,56 @@ const enviarMensajeWhatsApp = async (req, res) => {
   }
 };
 
+const enviarMensaje = async (req, res) => {
+  try {
+    const { numero, mensaje } = req.body;
+    const userId = req.user;
+    const userRole = req.user.role.name;
+
+    // Verificar si el usuario tiene permiso para usar el cliente
+    let tienePermiso = false;
+    let clienteId = userId;
+
+    if (userRole === 'owner') {
+      // Si es owner, verificar si el número pertenece a uno de sus usuarios
+      const ownerRole = await Role.findOne({ name: 'owner' }).populate('users');
+      const ownerUsers = ownerRole.users.map(user => user._id);
+      
+      const sesion = await Session.findOne({ 
+        userId: { $in: ownerUsers },
+        numero: numero
+      });
+
+      if (sesion) {
+        tienePermiso = true;
+        clienteId = sesion.userId;
+      }
+    } else if (userRole === 'admin') {
+      // Los admins tienen acceso a todos los clientes
+      tienePermiso = true;
+    } else {
+      // Para usuarios normales, verificar si el número es suyo
+      const sesion = await Session.findOne({ userId, numero });
+      tienePermiso = !!sesion;
+    }
+
+    if (!tienePermiso) {
+      return res.status(403).json({ error: "No tienes permiso para usar este cliente" });
+    }
+
+    const resultado = await enviarMensaje(clienteId, numero, mensaje);
+    res.json(resultado);
+  } catch (error) {
+    console.error("❌ Error al enviar mensaje:", error);
+    res.status(500).json({ error: "Error al enviar mensaje" });
+  }
+};
+
 module.exports = {
   iniciarSesion,
   obtenerQR,
   verificarEstado,
   enviarMensajeWhatsApp,
   obtenerSesiones,
+  enviarMensaje,
 };

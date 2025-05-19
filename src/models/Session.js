@@ -3,12 +3,7 @@ const mongoose = require("mongoose");
 const SessionSchema = new mongoose.Schema({
   numero: { 
     type: String, 
-    required: false,
-    index: {
-      unique: true,
-      sparse: true,
-      partialFilterExpression: { numero: { $type: "string" } }
-    }
+    required: false
   },
   sessionId: { type: String, required: true },
   status: { 
@@ -27,5 +22,8 @@ const SessionSchema = new mongoose.Schema({
 
 // Índice compuesto para userId y status
 SessionSchema.index({ userId: 1, status: 1 });
+
+// Índice compuesto para userId y numero
+SessionSchema.index({ userId: 1, numero: 1 });
 
 module.exports = mongoose.model("Session", SessionSchema);

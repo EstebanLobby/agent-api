@@ -4,7 +4,7 @@ const { handleQR } = require("./handlers/qr.handler");
 const { handleReady } = require("./handlers/ready.handler");
 const { handleMessage } = require("./handlers/message.handler");
 const { handleDisconnected } = require("./handlers/disconnected.handler");
-const { clients, addClient, removeClient, getClient } = require("./clientManager");
+const { clients, getClient, addClient, removeClient } = require("./clientManager");
 
 let io;
 const qrCodes = {};
@@ -44,6 +44,7 @@ async function iniciarCliente(userId, numero) {
   if (clients[userId]) return clients[userId];
 
   let session = await Session.findOne({ userId });
+  console.log('session',session)
   if (!session) {
     session = await Session.create({ 
       userId, 
@@ -79,11 +80,12 @@ async function verificarEstadoSesion(userId) {
     if (!session) return { status: "not_found", isActive: false };
 
     const client = getClient(userId);
-    const isActive = client ? await client.getState() : false;
+    // Verificamos si el cliente existe y está en memoria
+    const isActive = !!client;
 
     return {
       status: session.status,
-      isActive: !!isActive,
+      isActive,
       numero: session.numero,
       lastUpdate: session.updatedAt
     };
@@ -105,20 +107,20 @@ async function getEstado(userId) {
 
 async function enviarMensaje(userId, destino, mensaje) {
   try {
-    const client = getClient(userId);
+    const client = await getClient(userId);
+    
     if (!client) {
-      return { error: "Cliente no está conectado" };
+      return { error: "No se encontró un cliente activo para este usuario" };
     }
 
-    // Asegurarse de que el número tenga el formato correcto
     const numeroFormateado = destino.startsWith('+') ? destino.substring(1) : destino;
     const chatId = `${numeroFormateado}@c.us`;
 
     await client.sendMessage(chatId, mensaje);
-    return { success: true };
+    return { success: true, message: "Mensaje enviado correctamente" };
   } catch (error) {
     console.error("❌ Error al enviar mensaje:", error);
-    return { error: "Error al enviar mensaje" };
+    return { error: error.message || "Error al enviar mensaje" };
   }
 }
 

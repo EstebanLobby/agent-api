@@ -10,21 +10,17 @@ async function fixSessionsCollection() {
     // Obtener la colección de sesiones
     const db = mongoose.connection.db;
     const sessionsCollection = db.collection('sessions');
-    //test
+
     // Eliminar el índice único en el campo numero
     await sessionsCollection.dropIndex('numero_1');
-    console.log('✅ Índice eliminado correctamente');
+    console.log('✅ Índice único eliminado correctamente');
 
-    // Crear un nuevo índice sparse
+    // Crear el nuevo índice compuesto
     await sessionsCollection.createIndex(
-      { numero: 1 },
-      { 
-        unique: true,
-        sparse: true,
-        partialFilterExpression: { numero: { $type: "string" } }
-      }
+      { userId: 1, numero: 1 },
+      { background: true }
     );
-    console.log('✅ Nuevo índice creado correctamente');
+    console.log('✅ Nuevo índice compuesto creado correctamente');
 
   } catch (error) {
     console.error('❌ Error:', error);
