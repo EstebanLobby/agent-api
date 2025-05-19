@@ -19,6 +19,14 @@ const UserSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Role",
       required: true,
+      validate: {
+        validator: async function(v) {
+          const Role = mongoose.model('Role');
+          const role = await Role.findById(v);
+          return role !== null;
+        },
+        message: 'El rol especificado no existe'
+      }
     },
     photo: { type: String, default: "https://example.com/default-avatar.png" },
     telephone: { type: String, required: false },
@@ -38,6 +46,11 @@ const UserSchema = new mongoose.Schema(
     updatedAt: {
       type: Date,
       default: Date.now,
+    },
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null
     },
   },
   {

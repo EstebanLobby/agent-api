@@ -58,7 +58,18 @@ async function iniciarCliente(userId, numero) {
     authStrategy: new LocalAuth({ clientId: session.sessionId }),
     puppeteer: {
       headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-accelerated-2d-canvas",
+        "--no-first-run",
+        "--no-zygote",
+        "--disable-gpu",
+        "--disable-extensions"
+      ],
+      executablePath: process.env.CHROME_PATH || undefined,
+      timeout: 60000
     },
   });
 

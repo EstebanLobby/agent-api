@@ -4,7 +4,6 @@ const Role = require("../models/Role");
 
 const authMiddleware = async (req, res, next) => {
   try {
-
     const authHeader = req.headers.authorization;
   
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -20,13 +19,12 @@ const authMiddleware = async (req, res, next) => {
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
-  
     } catch (error) {
       console.error("❌ Error verificando el token:", error.message);
       return res.status(401).json({ error: "Token inválido o expirado." });
     }
 
-    const user = await User.findById(decoded.id);
+    const user = await User.findById(decoded.id).populate('role');
     if (!user) {
       console.error("❌ Usuario no encontrado en la base de datos.");
       return res.status(404).json({ error: "Usuario no encontrado." });
@@ -34,13 +32,19 @@ const authMiddleware = async (req, res, next) => {
 
     console.log(`👤 Usuario autenticado: ${user.email}`);
 
-    const role = await Role.findById(user.role).lean();
+    // Asegurarnos de que el rol existe
+    if (!user.role) {
+      console.error("❌ Usuario sin rol asignado");
+      return res.status(403).json({ error: "Usuario sin rol asignado" });
+    }
 
     req.user = {
-      ...user.toObject(),
+      id: user._id,
+      email: user.email,
+      username: user.username,
       role: {
-        id: role._id,
-        name: role.name
+        id: user.role._id,
+        name: user.role.name
       }
     };
     

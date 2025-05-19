@@ -174,51 +174,6 @@ const enviarMensajeWhatsApp = async (req, res) => {
   }
 };
 
-const enviarMensaje = async (req, res) => {
-  try {
-    const { numero, mensaje } = req.body;
-    const userId = req.user;
-    const userRole = req.user.role.name;
-
-    // Verificar si el usuario tiene permiso para usar el cliente
-    let tienePermiso = false;
-    let clienteId = userId;
-
-    if (userRole === 'owner') {
-      // Si es owner, verificar si el número pertenece a uno de sus usuarios
-      const ownerRole = await Role.findOne({ name: 'owner' }).populate('users');
-      const ownerUsers = ownerRole.users.map(user => user._id);
-      
-      const sesion = await Session.findOne({ 
-        userId: { $in: ownerUsers },
-        numero: numero
-      });
-
-      if (sesion) {
-        tienePermiso = true;
-        clienteId = sesion.userId;
-      }
-    } else if (userRole === 'admin') {
-      // Los admins tienen acceso a todos los clientes
-      tienePermiso = true;
-    } else {
-      // Para usuarios normales, verificar si el número es suyo
-      const sesion = await Session.findOne({ userId, numero });
-      tienePermiso = !!sesion;
-    }
-
-    if (!tienePermiso) {
-      return res.status(403).json({ error: "No tienes permiso para usar este cliente" });
-    }
-
-    const resultado = await enviarMensaje(clienteId, numero, mensaje);
-    res.json(resultado);
-  } catch (error) {
-    console.error("❌ Error al enviar mensaje:", error);
-    res.status(500).json({ error: "Error al enviar mensaje" });
-  }
-};
-
 module.exports = {
   iniciarSesion,
   obtenerQR,

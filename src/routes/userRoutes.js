@@ -5,6 +5,8 @@ const {
   editProfile,
   getProfile,
   updateUserRole,
+  deleteUser,
+  assignOwnerToUser
 } = require("../controllers/userController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const roleMiddleware = require("../middlewares/roleMiddleware");
@@ -35,6 +37,17 @@ router.put(
   authMiddleware,
   roleMiddleware(["admin"]),
   updateUserRole
+);
+
+// Ruta para asignar owner a un usuario (solo ADMIN)
+router.put("/:userId/owner", authMiddleware, roleMiddleware(["admin"]), assignOwnerToUser);
+
+// Eliminar un usuario
+router.delete(
+  "/:userId",
+  authMiddleware,
+  roleMiddleware(["admin"]),
+  deleteUser
 );
 
 module.exports = router;
