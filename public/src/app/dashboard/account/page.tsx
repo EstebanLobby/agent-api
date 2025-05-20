@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 import { Card, Divider, Typography, Stack, Button } from '@mui/material';
 import { PencilSimple as EditIcon } from '@phosphor-icons/react/dist/ssr';
 import { useSelector } from 'react-redux';
-import { selectUser } from '@/store/slices/auth/auth-selectors';
+import { selectCurrentUser } from '@/store/slices/user/user-selectors';
 import UserProfile from '@/components/dashboard/customer/user/user-profile';
 import type { User } from '@/types/user';
 
 export default function Page(): React.JSX.Element {
-  const user = useSelector(selectUser);
+  const user = useSelector(selectCurrentUser);
   const router = useRouter();
 
   // Verificar que user sea del tipo User

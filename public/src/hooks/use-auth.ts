@@ -4,13 +4,14 @@ import { signIn, signUp, signOut, resetPassword } from '../store/slices/auth/aut
 export const useAuth = () => {
   const dispatch = useAppDispatch();
   const auth = useAppSelector((state) => state.auth);
+  const user = useAppSelector((state) => state.user);
 
   return {
     // Estado
     isAuthenticated: auth.isAuthenticated,
     isInitialized: auth.isInitialized,
-    user: auth.user,
-    loading: auth.loading,
+    user: user.user,
+    loading: auth.isLoading,
     error: auth.error,
 
     // Acciones

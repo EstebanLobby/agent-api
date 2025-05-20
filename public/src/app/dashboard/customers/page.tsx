@@ -6,6 +6,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { CustomersTable } from '@/components/dashboard/customer/customers-table';
 import type { Customer } from '@/components/dashboard/customer/customers-table';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 export default function Page(): React.JSX.Element {
   const [customers, setCustomers] = React.useState<Customer[]>([]);
@@ -18,7 +19,7 @@ export default function Page(): React.JSX.Element {
     try {
       setLoading(true);
       const res = await fetch(
-        process.env.NEXT_PUBLIC_ENV === 'testing'
+        process.env.NEXT_PUBLIC_ENV === 'development'
           ? `${process.env.NEXT_TESTING_API_URL}/users/all`
           : `${process.env.NEXT_PUBLIC_API_URL}/users/all`,
         {
@@ -64,26 +65,28 @@ export default function Page(): React.JSX.Element {
   const paginatedCustomers = customers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
-    <Stack spacing={3}>
-      <Stack direction="row" spacing={3}>
+    <ProtectedRoute allowedRoles={['owner', 'admin']}>  
+      <Stack spacing={3}>
+        <Stack direction="row" spacing={3}>
         <Stack spacing={1} sx={{ flex: '1 1 auto' }}>
           <Typography variant="h4">Clientes</Typography>
         </Stack>
       </Stack>
-
+      
       {error ? <Typography color="error">{error}</Typography> : null}
       {loading ? (
         <Typography>Cargando usuarios...</Typography>
       ) : (
         <CustomersTable
-          count={customers.length}
-          page={page}
-          rows={paginatedCustomers}
-          rowsPerPage={rowsPerPage}
-          onPageChange={setPage}
-          onRowsPerPageChange={setRowsPerPage}
+        count={customers.length}
+        page={page}
+        rows={paginatedCustomers}
+        rowsPerPage={rowsPerPage}
+        onPageChange={setPage}
+        onRowsPerPageChange={setRowsPerPage}
         />
       )}
     </Stack>
+      </ProtectedRoute>
   );
 }

@@ -4,6 +4,7 @@ export const paths = {
     signIn: '/auth/sign-in',
     signUp: '/auth/sign-up',
     resetPassword: '/auth/reset-password',
+    unauthorized: '/auth/unauthorized',
   },
   dashboard: {
     overview: { path: '/dashboard', roles: ['admin', 'member', 'owner'] },

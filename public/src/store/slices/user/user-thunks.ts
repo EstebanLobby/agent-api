@@ -1,7 +1,9 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { api } from '@/lib/api';
 import type { User, UpdateUserProfilePayload } from '@/types/user';
-import { logger } from '@/lib/default-logger';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: '[UserThunks]' });
 
 const fetchUserApi = async () => {
   const response = await api.get('/users/profile');
@@ -13,15 +15,38 @@ const updateProfileApi = async (payload: UpdateUserProfilePayload) => {
   return response;
 };
 
-export const refetchUser = createAsyncThunk<User | null>(
-  'user/refetch',
+const fetchAllUsersApi = async () => {
+  const response = await api.get('/users/all'); // Asegúrate de que esta sea la ruta correcta de tu API
+  return response;
+};
+
+// Obtener perfil de usuario
+export const refetchUser = createAsyncThunk<User, void, { rejectValue: string }>(
+  'user/refetchUser',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetchUserApi();
-      // Aserción de tipo explícita para response.data
-      return (response.data as User) ?? null;
+      logger.debug('Obteniendo perfil de usuario...');
+      const response = await api.get<User>('/user/profile');
+      logger.debug('Perfil obtenido:', response.data);
+      return response.data;
+    } catch (error) {
+      logger.error('Error al obtener perfil:', error);
+      const message = error instanceof Error ? error.message : 'Error al obtener perfil de usuario';
+      return rejectWithValue(message);
+    }
+  }
+);
+
+// Nuevo thunk para actualizar perfil
+export const updateUserProfile = createAsyncThunk<User, UpdateUserProfilePayload>(
+  'user/updateProfile',
+  async (payload, { rejectWithValue }) => {
+    try {
+      const response = await updateProfileApi(payload);
+      // Añadir aserción de tipo explícita
+      return response.data as User;
     } catch (err: unknown) {
-      logger.error('Failed to refetch user', err);
+      logger.error('Failed to update user profile', err);
 
       // Manejo seguro del error
       let errorMessage = 'Unknown error occurred';
@@ -41,19 +66,17 @@ export const refetchUser = createAsyncThunk<User | null>(
   },
 );
 
-// Nuevo thunk para actualizar perfil
-export const updateUserProfile = createAsyncThunk<User, UpdateUserProfilePayload>(
-  'user/updateProfile',
-  async (payload, { rejectWithValue }) => {
+export const fetchAllUsers = createAsyncThunk<User[]>(
+  'user/fetchAll',
+  async (_, { rejectWithValue }) => {
     try {
-      const response = await updateProfileApi(payload);
-      // Añadir aserción de tipo explícita
-      return response.data as User;
+      const response = await fetchAllUsersApi();
+      logger.debug('Respuesta de fetchAllUsers:', response.data);
+      return response.data as User[];
     } catch (err: unknown) {
-      logger.error('Failed to update user profile', err);
+      logger.error('Error al obtener usuarios:', err);
 
-      // Manejo seguro del error
-      let errorMessage = 'Unknown error occurred';
+      let errorMessage = 'Error desconocido al obtener usuarios';
       if (err instanceof Error) {
         errorMessage = err.message;
       } else if (

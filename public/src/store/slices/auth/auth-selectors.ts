@@ -7,6 +7,3 @@ export const selectAuth = (state: RootState) => state.auth;
 // Selector memoizado (evita renders innecesarios)
 export const selectIsAuthenticated = createSelector(selectAuth, (auth) => auth.isAuthenticated);
 export const selectIsInitialized = createSelector(selectAuth, (auth) => auth.isInitialized);
-
-// Selector para datos derivados
-export const selectUser = createSelector(selectAuth, (auth) => auth.user || []);

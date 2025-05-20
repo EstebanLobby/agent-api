@@ -9,6 +9,11 @@ import {
 import { AppDispatch, RootState } from '../../index';
 import * as authService from '../../../lib/auth/auth-service';
 import { authStorage } from '@/lib/auth/auth-storage';
+import { createLogger } from '@/lib/logger';
+import { refetchUser } from '../user/user-thunks';
+import { setCurrentUser } from '../user/user-slice';
+
+const logger = createLogger({ prefix: '[AuthThunks]' });
 
 // Iniciar sesión
 export const signIn = createAsyncThunk<
@@ -23,8 +28,8 @@ export const signIn = createAsyncThunk<
     const { user, token } = response;
 
     authStorage.setToken(token);
-
-    dispatch(authenticateSuccess({ user, token }));
+    dispatch(authenticateSuccess({ token }));
+    dispatch(setCurrentUser(user));
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Error en la autenticación';
     dispatch(authenticateFailure(message));
@@ -44,10 +49,9 @@ export const signUp = createAsyncThunk<
     const response = await authService.signUp(email, name, password);
     const { user, token } = response;
 
-    // Guardar token en localStorage
     authStorage.setToken(token);
-
-    dispatch(authenticateSuccess({ user, token }));
+    dispatch(authenticateSuccess({ token }));
+    dispatch(setCurrentUser(user));
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Error en el registro';
     dispatch(authenticateFailure(message));
@@ -59,11 +63,9 @@ export const signUp = createAsyncThunk<
 export const signOut = createAsyncThunk<void, void, { dispatch: AppDispatch; state: RootState }>(
   'auth/signOut',
   async (_, { dispatch }) => {
-    // Eliminar token del localStorage
     authStorage.clearAuth();
-
-    // Limpiar estado de autenticación
     dispatch(logout());
+    dispatch(setCurrentUser(null));
   },
 );
 
@@ -73,17 +75,24 @@ export const restoreSession = createAsyncThunk('auth/restoreSession', async (_, 
   try {
     const token = authStorage.getToken();
     if (!token) {
+      logger.debug('No se encontró token, finalizando restauración de sesión');
       dispatch(setInitialized());
       return null;
     }
 
-    const user = await authService.getUserProfile(token);
-    dispatch(authenticateSuccess({ user, token }));
-
+    logger.debug('Token encontrado, obteniendo perfil de usuario...');
+    const user = await dispatch(refetchUser()).unwrap();
+    logger.debug('Perfil de usuario obtenido:', user);
+    
+    dispatch(authenticateSuccess({ token }));
+    dispatch(setCurrentUser(user));
+    
     return user;
   } catch (error) {
+    logger.error('Error al restaurar sesión:', error);
     authStorage.clearAuth();
     dispatch(logout());
+    dispatch(setCurrentUser(null));
     throw error;
   } finally {
     dispatch(setInitialized());

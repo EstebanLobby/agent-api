@@ -6,12 +6,12 @@ import { Typography, Card, Button, Stack } from '@mui/material';
 import { ArrowLeft as BackIcon } from '@phosphor-icons/react/dist/ssr';
 import EditUserForm from '@/components/dashboard/account/edit-user-form';
 import { useSelector } from 'react-redux';
-import { selectUser } from '@/store/slices/auth/auth-selectors';
+import { selectCurrentUser } from '@/store/slices/user/user-selectors';
 import type { User } from '@/types/user';
 
 export default function Page(): React.JSX.Element {
   const router = useRouter();
-  const user = useSelector(selectUser);
+  const user = useSelector(selectCurrentUser);
 
   // Verificar que user sea del tipo User
   if (!user || Array.isArray(user)) {

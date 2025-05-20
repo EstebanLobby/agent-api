@@ -25,6 +25,7 @@ export interface User {
   updatedAt: Date;
   __v: number;
   id: string;
+  name: string;
 }
 
 export interface UpdateUserProfilePayload {
@@ -33,4 +34,5 @@ export interface UpdateUserProfilePayload {
   phone?: string;
   address?: string;
   photo?: string;
+  name?: string;
 }

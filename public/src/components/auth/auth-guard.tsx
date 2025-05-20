@@ -6,6 +6,9 @@ import { Box, CircularProgress } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { selectIsAuthenticated, selectIsInitialized } from '@/store/slices/auth/auth-selectors';
 import { restoreSession } from '@/store/slices/auth/auth-thunks';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: '[AuthGuard]' });
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -19,12 +22,25 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   // Restaurar sesión al montar
   useEffect(() => {
-    dispatch(restoreSession());
-  }, [dispatch]);
+    const initAuth = async () => {
+      try {
+        logger.debug('Iniciando restauración de sesión...');
+        await dispatch(restoreSession());
+        logger.debug('Sesión restaurada');
+      } catch (error) {
+        logger.error('Error al restaurar sesión:', error);
+      }
+    };
+
+    if (!isInitialized) {
+      initAuth();
+    }
+  }, [dispatch, isInitialized]);
 
   // Redirigir si no está autenticado y ya se inicializó la sesión
   useEffect(() => {
     if (isInitialized && !isAuthenticated) {
+      logger.debug('Usuario no autenticado, redirigiendo a login...');
       router.push('/auth/sign-in');
     }
   }, [isAuthenticated, isInitialized, router]);
