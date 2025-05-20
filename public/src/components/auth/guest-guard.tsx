@@ -2,9 +2,13 @@
 
 import * as React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Alert } from '@mui/material';
-import { logger } from '@/lib/default-logger';
-import { useUser } from '@/hooks/use-user';
+import { createLogger } from '@/lib/logger';
+import { useAppSelector } from '@/store';
+import { selectIsAuthenticated, selectIsInitialized } from '@/store/slices/auth/auth-selectors';
+
+const logger = createLogger({ prefix: '[GuestGuard]' });
+
+const AUTH_ROUTES = ['/auth/sign-in', '/auth/sign-up', '/auth/reset-password'];
 
 export interface GuestGuardProps {
   children: React.ReactNode;
@@ -13,41 +17,20 @@ export interface GuestGuardProps {
 export function GuestGuard({ children }: GuestGuardProps): React.JSX.Element | null {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, error, isLoading } = useUser();
-  const [isChecking, setIsChecking] = React.useState<boolean>(true);
-
-  const checkPermissions = async (): Promise<void> => {
-    if (isLoading) {
-      logger.debug('[GuestGuard]: Esperando a que el usuario termine de cargar...');
-      return; // ✅ No hacer nada mientras `useUser()` sigue cargando
-    }
-
-    if (error) {
-      setIsChecking(false);
-      return;
-    }
-
-    if (user) {
-      logger.debug('[GuestGuard]: User is logged in, redirecting to dashboard');
-      router.replace('/dashboard');
-    }
-
-    setIsChecking(false);
-  };
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const isInitialized = useAppSelector(selectIsInitialized);
 
   React.useEffect(() => {
-    checkPermissions().catch(() => {
-      // noop
-    });
-  }, [user, error, isLoading, pathname, checkPermissions]);
+    if (isInitialized && isAuthenticated && AUTH_ROUTES.includes(pathname)) {
+      logger.debug('Usuario autenticado en ruta de auth, redirigiendo a dashboard');
+      router.replace('/dashboard');
+    }
+  }, [isAuthenticated, isInitialized, router, pathname]);
 
-  if (isChecking) {
-    return null;
+  // Si estamos en una ruta de autenticación, mostrar el contenido
+  if (AUTH_ROUTES.includes(pathname)) {
+    return <React.Fragment>{children}</React.Fragment>;
   }
 
-  if (error) {
-    return <Alert color="error">{error}</Alert>;
-  }
-
-  return <React.Fragment>{children}</React.Fragment>;
+  return null;
 }

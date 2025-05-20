@@ -95,7 +95,7 @@ export function SignInForm() {
         sx={{ mt: 3, mb: 2, height: 48 }}
         disabled={loading || isSubmitting || !isValid}
       >
-        {loading ? <CircularProgress size={24} color="inherit" /> : 'Iniciar sesión'}
+        {loading ? <CircularProgress size={24} color="primary" /> : 'Iniciar sesión'}
       </Button>
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>

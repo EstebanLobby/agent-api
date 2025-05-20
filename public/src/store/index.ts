@@ -22,19 +22,31 @@ const persistenceMiddleware: Middleware = (store) => (next) => (action) => {
   
   // Solo persistir en el cliente
   if (typeof window !== 'undefined') {
+    // Si es una acción de logout, limpiar el estado persistido
+    if (typeof action === 'object' && action !== null && 'type' in action && action.type === 'auth/logout') {
+      localStorage.removeItem('redux_state');
+      return result;
+    }
+
     const state = store.getState();
-    // Persistir solo los datos necesarios
-    const persistData = {
-      auth: {
-        token: state.auth.token,
-        isAuthenticated: state.auth.isAuthenticated,
-        isInitialized: state.auth.isInitialized,
-      },
-      user: {
-        user: state.user.user,
-      },
-    };
-    localStorage.setItem('redux_state', JSON.stringify(persistData));
+    // Solo persistir si el usuario está autenticado
+    if (state.auth.isAuthenticated && state.auth.token) {
+      // Persistir solo los datos necesarios
+      const persistData = {
+        auth: {
+          token: state.auth.token,
+          isAuthenticated: state.auth.isAuthenticated,
+          isInitialized: state.auth.isInitialized,
+        },
+        user: {
+          user: state.user.user,
+        },
+      };
+      localStorage.setItem('redux_state', JSON.stringify(persistData));
+    } else {
+      // Si no está autenticado, limpiar el estado persistido
+      localStorage.removeItem('redux_state');
+    }
   }
   
   return result;
@@ -47,6 +59,18 @@ const loadPersistedState = (): Partial<RootState> | undefined => {
       const persistedState = localStorage.getItem('redux_state');
       if (persistedState) {
         const parsedState = JSON.parse(persistedState);
+        // Si no hay token, no restaurar el estado de autenticación
+        if (!parsedState.auth?.token) {
+          return {
+            auth: {
+              ...authReducer(undefined, { type: 'INIT' }),
+              isInitialized: false,
+            },
+            user: {
+              ...userReducer(undefined, { type: 'INIT' }),
+            },
+          };
+        }
         return {
           auth: {
             ...authReducer(undefined, { type: 'INIT' }),

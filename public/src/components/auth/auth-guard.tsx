@@ -29,31 +29,40 @@ export function AuthGuard({ children }: AuthGuardProps) {
         logger.debug('Sesión restaurada');
       } catch (error) {
         logger.error('Error al restaurar sesión:', error);
+        // Si hay error, forzar redirección a login
+        router.push('/auth/sign-in');
       }
     };
 
     if (!isInitialized) {
       initAuth();
     }
-  }, [dispatch, isInitialized]);
+  }, [dispatch, isInitialized, router]);
 
   // Redirigir si no está autenticado y ya se inicializó la sesión
   useEffect(() => {
     if (isInitialized && !isAuthenticated) {
       logger.debug('Usuario no autenticado, redirigiendo a login...');
-      router.push('/auth/sign-in');
+      router.replace('/auth/sign-in');
     }
   }, [isAuthenticated, isInitialized, router]);
 
+  // Si no está inicializado, mostrar loading
   if (!isInitialized) {
     return (
       <Box
         sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}
       >
-        <CircularProgress />
+        
       </Box>
     );
   }
 
+  // Si no está autenticado, no renderizar nada
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  // Si está autenticado, renderizar children
   return <>{children}</>;
 }

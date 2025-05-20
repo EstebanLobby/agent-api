@@ -2,7 +2,10 @@
 
 import type { User } from '@/types/user';
 import { api } from '@/lib/api';
-import { signOut } from '@/store/slices/auth/auth-thunks';
+import { authStorage } from '@/lib/auth/auth-storage';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: '[AuthClient]' });
 
 export interface SignUpParams {
   firstName: string;
@@ -95,12 +98,40 @@ class AuthClient {
 
   async signOut(): Promise<{ error?: string }> {
     try {
-      await api.post('/auth/logout', {}, { withCredentials: false });
-      signOut();
-      localStorage.removeItem('auth_token');
+      logger.debug('Iniciando proceso de logout en auth-client...');
+      const token = authStorage.getToken();
 
+      // Primero limpiamos el estado local
+      logger.debug('Limpiando estado local...');
+      authStorage.clearAuth();
+
+      // Si no hay token, terminamos aquí
+      if (!token) {
+        logger.debug('No hay token, finalizando logout...');
+        return {};
+      }
+
+      // Intentamos notificar al servidor
+      try {
+        logger.debug('Notificando al servidor...');
+        await api.post('/auth/logout', {}, { 
+          withCredentials: true,
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        logger.debug('Servidor notificado exitosamente');
+      } catch (error: any) {
+        // Si hay error, lo registramos pero no es crítico
+        logger.error('Error al notificar al servidor:', error);
+      }
+
+      logger.debug('Logout completado en auth-client');
       return {};
     } catch (error: any) {
+      logger.error('Error general en logout:', error);
+      // Asegurarnos de limpiar el estado local en caso de error
+      authStorage.clearAuth();
       return { error: error.response?.data?.message || 'Error al cerrar sesión' };
     }
   }

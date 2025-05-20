@@ -1,6 +1,7 @@
 import { api } from '@/lib/api';
 import { User } from '../../types/user';
 import { AuthResponse } from './auth-client';
+import { authClient } from './auth-client';
 
 // Iniciar sesión
 export const signIn = async (email: string, password: string): Promise<AuthResponse> => {
@@ -53,4 +54,16 @@ export const getUserProfile = async (token: string): Promise<User> => {
 // Restablecer contraseña
 export const resetPassword = async (email: string): Promise<void> => {
   await api.post('/auth/reset-password', { email });
+};
+
+// Cerrar sesión
+export const signOut = async (): Promise<void> => {
+  try {
+    const result = await authClient.signOut();
+    if (result.error) {
+      throw new Error(result.error);
+    }
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || 'Error al cerrar sesión');
+  }
 };

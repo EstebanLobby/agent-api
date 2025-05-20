@@ -37,9 +37,10 @@ export const authSlice = createSlice({
       state.error = action.payload;
     },
     logout: (state) => {
-      state.isAuthenticated = false;
-      state.token = null;
-      state.error = null;
+      Object.assign(state, {
+        ...initialState,
+        isInitialized: false
+      });
     },
     setInitialized: (state) => {
       state.isInitialized = true;

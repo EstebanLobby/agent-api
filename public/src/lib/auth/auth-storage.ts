@@ -2,6 +2,7 @@
 
 const TOKEN_KEY = 'auth_token';
 const REFRESH_TOKEN_KEY = 'auth_refresh_token';
+const REDUX_STATE_KEY = 'redux_state';
 
 export class AuthStorage {
   setToken(token: string): void {
@@ -32,8 +33,33 @@ export class AuthStorage {
 
   clearAuth(): void {
     if (typeof window !== 'undefined') {
+      // Limpiar tokens específicos
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(REFRESH_TOKEN_KEY);
+      
+      // Limpiar estado de Redux
+      localStorage.removeItem(REDUX_STATE_KEY);
+      
+      // Limpiar todas las claves que empiecen con 'auth_'
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('auth_')) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      // Limpiar cookies de autenticación
+      document.cookie = 'refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=localhost;';
+      document.cookie = 'refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      
+      // Limpiar cualquier otra cookie que pueda estar relacionada
+      const cookies = document.cookie.split(';');
+      cookies.forEach(cookie => {
+        const [name] = cookie.split('=');
+        document.cookie = `${name.trim()}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+      });
+
+      // Forzar recarga del estado de Redux
+      window.dispatchEvent(new Event('storage'));
     }
   }
 }

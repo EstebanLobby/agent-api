@@ -12,6 +12,7 @@ import { authStorage } from '@/lib/auth/auth-storage';
 import { createLogger } from '@/lib/logger';
 import { refetchUser } from '../user/user-thunks';
 import { setCurrentUser } from '../user/user-slice';
+import { api } from '@/lib/api';
 
 const logger = createLogger({ prefix: '[AuthThunks]' });
 
@@ -23,15 +24,20 @@ export const signIn = createAsyncThunk<
 >('auth/signIn', async ({ email, password }, { dispatch }) => {
   try {
     dispatch(startLoading());
+    logger.debug('Iniciando proceso de login...');
 
     const response = await authService.signIn(email, password);
     const { user, token } = response;
 
+    logger.debug('Login exitoso, guardando token...');
     authStorage.setToken(token);
     dispatch(authenticateSuccess({ token }));
     dispatch(setCurrentUser(user));
+    
+    logger.debug('Token guardado y estado actualizado');
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Error en la autenticación';
+    logger.error('Error en login:', message);
     dispatch(authenticateFailure(message));
     throw error;
   }
@@ -63,9 +69,52 @@ export const signUp = createAsyncThunk<
 export const signOut = createAsyncThunk<void, void, { dispatch: AppDispatch; state: RootState }>(
   'auth/signOut',
   async (_, { dispatch }) => {
-    authStorage.clearAuth();
-    dispatch(logout());
-    dispatch(setCurrentUser(null));
+    try {
+      logger.debug('Iniciando proceso de logout...');
+      
+      // 1. Primero limpiamos el estado de Redux
+      logger.debug('Limpiando estado de Redux...');
+      await Promise.all([
+        dispatch(logout()),
+        dispatch(setCurrentUser(null))
+      ]);
+      
+      // 2. Luego limpiamos el almacenamiento local
+      logger.debug('Limpiando almacenamiento local...');
+      authStorage.clearAuth();
+      localStorage.removeItem('redux_state');
+      
+      // 3. Finalmente notificamos al servidor
+      const token = authStorage.getToken();
+      if (token) {
+        logger.debug('Notificando al servidor...');
+        try {
+          await authService.signOut();
+          logger.debug('Servidor notificado exitosamente');
+        } catch (error) {
+          logger.error('Error al notificar al servidor:', error);
+          // Continuamos con la limpieza local incluso si falla la notificación al servidor
+        }
+      }
+      
+      // 4. Esperamos a que el estado se actualice
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // 5. Forzar recarga de la página para limpiar cualquier estado residual
+      logger.debug('Forzando recarga de la página...');
+      window.location.href = '/auth/sign-in';
+      
+    } catch (error) {
+      logger.error('Error en logout:', error);
+      // En caso de error, forzar limpieza y recarga
+      authStorage.clearAuth();
+      localStorage.removeItem('redux_state');
+      await Promise.all([
+        dispatch(logout()),
+        dispatch(setCurrentUser(null))
+      ]);
+      window.location.href = '/auth/sign-in';
+    }
   },
 );
 
