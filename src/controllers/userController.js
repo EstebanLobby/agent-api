@@ -2,6 +2,7 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const Role = require("../models/Role");
 const editProfileService = require("../services/user/editProfile.service");
+const createUserService = require("../services/user/create-user.service");
 const Session = require("../models/Session");
 const mongoose = require("mongoose");
 
@@ -10,9 +11,19 @@ const getAllUsers = async (req, res) => {
   try {
     const users = await User.find()
       .select("-password") // Excluye la contraseña
+      .populate('role', 'name')
       .lean();
 
-    res.status(200).json(users);
+    // Transformar la respuesta para incluir el rol como objeto
+    const usersWithRole = users.map(user => ({
+      ...user,
+      role: {
+        id: user.role._id,
+        name: user.role.name
+      }
+    }));
+
+    res.status(200).json(usersWithRole);
   } catch (error) {
     console.error("❌ Error al obtener usuarios:", error);
     res.status(500).json({ 
@@ -63,15 +74,27 @@ const updateUserRole = async (req, res) => {
       userId,
       { role: roleId },
       { new: true }
-    ).select("-password");
+    )
+    .select("-password")
+    .populate('role', 'name')
+    .lean();
 
     if (!user) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
+    // Transformar la respuesta para incluir el rol como objeto
+    const userResponse = {
+      ...user,
+      role: {
+        id: user.role._id,
+        name: user.role.name
+      }
+    };
+
     res.status(200).json({
       message: "Rol actualizado correctamente",
-      user
+      user: userResponse
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -206,6 +229,61 @@ const assignOwnerToUser = async (req, res) => {
   }
 };
 
+// 🔥 Suspender/Reactivar un usuario (solo ADMIN)
+const suspendUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { reason, action } = req.body;
+
+    // Verificar que el usuario existe
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    // Determinar la acción basada en el parámetro action o el estado actual
+    const shouldSuspend = action === 'suspend' ? true : action === 'activate' ? false : !user.isSuspended;
+
+    // Actualizar el estado del usuario
+    user.isSuspended = shouldSuspend;
+    user.suspendedReason = shouldSuspend ? reason : null;
+    user.suspendedUntil = shouldSuspend ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : null; // 30 días por defecto
+
+    await user.save();
+
+    res.status(200).json({
+      message: shouldSuspend ? "Usuario suspendido correctamente" : "Usuario reactivado correctamente",
+      user: {
+        ...user.toObject(),
+        password: undefined
+      }
+    });
+  } catch (error) {
+    console.error("❌ Error al suspender/reactivar usuario:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// 🔥 Crear un nuevo usuario (solo ADMIN)
+const createUser = async (req, res) => {
+  try {
+    const userData = req.body;
+
+    // Crear el usuario usando el servicio
+    const newUser = await createUserService(userData);
+
+    res.status(201).json({
+      message: "Usuario creado correctamente",
+      user: newUser
+    });
+  } catch (error) {
+    console.error("❌ Error al crear usuario:", error);
+    res.status(400).json({ 
+      message: error.message || "Error al crear el usuario"
+    });
+  }
+};
+
 module.exports = {
   getAllUsers,
   getUserProfile,
@@ -213,5 +291,7 @@ module.exports = {
   editProfile,
   updateUserRole,
   deleteUser,
-  assignOwnerToUser
+  assignOwnerToUser,
+  suspendUser,
+  createUser
 };

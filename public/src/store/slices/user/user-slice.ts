@@ -2,7 +2,15 @@
 
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { User } from '@/types/user';
-import { refetchUser, updateUserProfile, fetchAllUsers } from './user-thunks';
+import { 
+  refetchUser, 
+  updateUserProfile, 
+  fetchAllUsers, 
+  updateUserRole, 
+  suspendUser, 
+  deleteUser,
+  createUser 
+} from './user-thunks';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger({ prefix: '[UserSlice]' });
@@ -17,6 +25,9 @@ export interface UserState {
   allUsers: User[];
   allUsersLoading: boolean;
   allUsersError: string | null;
+  isCreating: boolean;
+  createError: string | null;
+  createSuccess: boolean;
 }
 
 const initialState: UserState = {
@@ -29,6 +40,9 @@ const initialState: UserState = {
   allUsers: [],
   allUsersLoading: false,
   allUsersError: null,
+  isCreating: false,
+  createError: null,
+  createSuccess: false,
 };
 
 const userSlice = createSlice({
@@ -48,6 +62,10 @@ const userSlice = createSlice({
     resetUpdateStatus: (state) => {
       state.updateError = null;
       state.updateSuccess = false;
+    },
+    resetCreateStatus: (state) => {
+      state.createError = null;
+      state.createSuccess = false;
     },
   },
   extraReducers: (builder) => {
@@ -96,9 +114,67 @@ const userSlice = createSlice({
       .addCase(fetchAllUsers.rejected, (state, action) => {
         state.allUsersError = action.payload as string;
         state.allUsersLoading = false;
+      })
+
+      .addCase(updateUserRole.pending, (state) => {
+        state.isUpdating = true;
+        state.updateError = null;
+      })
+      .addCase(updateUserRole.fulfilled, (state, action: PayloadAction<User>) => {
+        state.isUpdating = false;
+        state.updateSuccess = true;
+        state.allUsers = state.allUsers.map(user => 
+          user._id === action.payload._id ? action.payload : user
+        );
+      })
+      .addCase(updateUserRole.rejected, (state, action) => {
+        state.isUpdating = false;
+        state.updateError = action.payload as string;
+      })
+      .addCase(suspendUser.pending, (state) => {
+        state.isUpdating = true;
+        state.updateError = null;
+      })
+      .addCase(suspendUser.fulfilled, (state, action: PayloadAction<User>) => {
+        state.isUpdating = false;
+        state.updateSuccess = true;
+        state.allUsers = state.allUsers.map(user => 
+          user._id === action.payload._id ? action.payload : user
+        );
+      })
+      .addCase(suspendUser.rejected, (state, action) => {
+        state.isUpdating = false;
+        state.updateError = action.payload as string;
+      })
+      .addCase(deleteUser.pending, (state) => {
+        state.isUpdating = true;
+        state.updateError = null;
+      })
+      .addCase(deleteUser.fulfilled, (state, action: PayloadAction<{ _id: string }>) => {
+        state.isUpdating = false;
+        state.updateSuccess = true;
+        state.allUsers = state.allUsers.filter(user => user._id !== action.payload._id);
+      })
+      .addCase(deleteUser.rejected, (state, action) => {
+        state.isUpdating = false;
+        state.updateError = action.payload as string;
+      })
+      .addCase(createUser.pending, (state) => {
+        state.isCreating = true;
+        state.createError = null;
+        state.createSuccess = false;
+      })
+      .addCase(createUser.fulfilled, (state, action) => {
+        state.isCreating = false;
+        state.createSuccess = true;
+        state.allUsers.push(action.payload);
+      })
+      .addCase(createUser.rejected, (state, action) => {
+        state.isCreating = false;
+        state.createError = action.payload as string;
       });
   },
 });
 
-export const { setCurrentUser, logout, resetUpdateStatus } = userSlice.actions;
+export const { setCurrentUser, logout, resetUpdateStatus, resetCreateStatus } = userSlice.actions;
 export default userSlice.reducer;

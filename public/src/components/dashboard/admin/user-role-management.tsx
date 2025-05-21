@@ -70,7 +70,7 @@ export default function UserRoleManagement(): React.JSX.Element {
 
   const handleRoleChange = async (userId: string, newRoleId: string) => {
     try {
-      await api.put(`/users/${userId}/role`, { roleId: newRoleId });
+      await api.put(`/user/${userId}/role`, { roleId: newRoleId });
       setSuccess('Rol actualizado correctamente');
       fetchUsers(); // Recargar la lista de usuarios
 

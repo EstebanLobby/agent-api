@@ -6,12 +6,22 @@ const {
   getProfile,
   updateUserRole,
   deleteUser,
-  assignOwnerToUser
+  assignOwnerToUser,
+  suspendUser,
+  createUser
 } = require("../controllers/userController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const roleMiddleware = require("../middlewares/roleMiddleware");
 
 const router = express.Router();
+
+// Ruta para crear un nuevo usuario (solo ADMIN)
+router.post(
+  "/",
+  authMiddleware,
+  roleMiddleware(["admin"]),
+  createUser
+);
 
 router.get(
   "/all",
@@ -48,6 +58,14 @@ router.delete(
   authMiddleware,
   roleMiddleware(["admin"]),
   deleteUser
+);
+
+// Ruta para suspender/reactivar usuario (solo ADMIN)
+router.patch(
+  "/:userId/suspend",
+  authMiddleware,
+  roleMiddleware(["admin"]),
+  suspendUser
 );
 
 module.exports = router;

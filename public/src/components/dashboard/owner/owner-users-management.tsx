@@ -47,31 +47,6 @@ export default function OwnerUsersManagement(): React.JSX.Element {
   const [openDialog, setOpenDialog] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  /*   useEffect(() => {
-    fetchOwners();
-    fetchUsers();
-  }, []);
-
-  const fetchOwners = async () => {
-    try {
-      const response = await api.get('/roles/owner');
-      setOwners(response.data);
-    } catch (error) {
-      console.error('Error al obtener owners:', error);
-    }
-  };
-
-  const fetchUsers = async () => {
-    try {
-      const response = await api.get('/users/all');
-      setUsers(response.data);
-    } catch (error) {
-      console.error('Error al obtener usuarios:', error);
-    } finally {
-      setLoading(false);
-    }
-  }; */
-
   const handleAssignUser = async () => {
     try {
       await api.post(`/roles/owner/${selectedOwner}/users`, {

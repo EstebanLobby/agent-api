@@ -16,7 +16,7 @@ const updateProfileApi = async (payload: UpdateUserProfilePayload) => {
 };
 
 const fetchAllUsersApi = async () => {
-  const response = await api.get('/users/all'); // Asegúrate de que esta sea la ruta correcta de tu API
+  const response = await api.get('/user/all'); 
   return response;
 };
 
@@ -91,4 +91,63 @@ export const fetchAllUsers = createAsyncThunk<User[]>(
       return rejectWithValue(errorMessage);
     }
   },
+);
+
+export const updateUserRole = createAsyncThunk<User, { userId: string; roleId: string }>(
+  'user/updateRole',
+  async ({ userId, roleId }, { rejectWithValue }) => {
+    try {
+      const response = await api.put<User>(`/user/${userId}/role`, { roleId });
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Error al actualizar el rol');
+    }
+  }
+);
+
+export const suspendUser = createAsyncThunk<User, { userId: string; action: 'suspend' | 'activate'; reason?: string }>(
+  'user/suspend',
+  async ({ userId, action, reason }, { rejectWithValue }) => {
+    try {
+      const response = await api.patch<User>(`/user/${userId}/suspend`, { action, reason });
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Error al suspender/reactivar el usuario');
+    }
+  }
+);
+
+export const deleteUser = createAsyncThunk<{ _id: string }, string>(
+  'user/delete',
+  async (userId, { rejectWithValue }) => {
+    try {
+      const response = await api.delete<{ _id: string }>(`/user/${userId}`);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Error al eliminar el usuario');
+    }
+  }
+);
+
+// Crear un nuevo usuario
+export const createUser = createAsyncThunk<User, {
+  username: string;
+  email: string;
+  password: string;
+  phone?: string;
+  address?: string;
+  role: string;
+}>(
+  'user/create',
+  async (userData, { rejectWithValue }) => {
+    try {
+      logger.debug('Creando nuevo usuario:', userData);
+      const response = await api.post<{ message: string; user: User }>('/user', userData);
+      logger.debug('Usuario creado:', response.data);
+      return response.data.user;
+    } catch (error: any) {
+      logger.error('Error al crear usuario:', error);
+      return rejectWithValue(error.response?.data?.message || 'Error al crear el usuario');
+    }
+  }
 );

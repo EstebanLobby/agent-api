@@ -28,6 +28,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Chip,
 } from '@mui/material';
 
 import {
@@ -36,10 +37,41 @@ import {
   Prohibit as ProhibitIcon,
   MagnifyingGlass as SearchIcon,
   User as UserIcon,
+  CheckCircle as CheckCircleIcon,
 } from '@phosphor-icons/react/dist/ssr';
 
 import dayjs from 'dayjs';
 import { useSelection } from '@/hooks/use-selection';
+import { useAppDispatch } from '@/store';
+import { updateUserRole, suspendUser, deleteUser, fetchAllUsers } from '@/store/slices/user/user-thunks';
+
+// Constantes
+const ROLES = {
+  ADMIN: {
+    id: '00000001a3bcc48331b0bf15',
+    name: 'admin'
+  },
+  OWNER: {
+    id: '682b7e77b43ded5380102510',
+    name: 'owner'
+  },
+  MEMBER: {
+    id: '00000003a3bcc48331b0bf1d',
+    name: 'member'
+  },
+} as const;
+
+const ROLE_LABELS = {
+  [ROLES.ADMIN.name]: 'Admin',
+  [ROLES.OWNER.name]: 'Owner',
+  [ROLES.MEMBER.name]: 'Member',
+} as const;
+
+const ROLE_COLORS = {
+  [ROLES.ADMIN.name]: 'error',
+  [ROLES.OWNER.name]: 'warning',
+  [ROLES.MEMBER.name]: 'success',
+} as const;
 
 export interface Customer {
   id: string;
@@ -48,8 +80,12 @@ export interface Customer {
   email: string;
   address: { city: string; state: string; country: string; street: string };
   phone: string;
-  role: string;
+  role: {
+    id: string;
+    name: string;
+  };
   createdAt: Date;
+  isSuspended?: boolean;
 }
 
 interface CustomersTableProps {
@@ -59,6 +95,7 @@ interface CustomersTableProps {
   rowsPerPage?: number;
   onPageChange?: (page: number) => void;
   onRowsPerPageChange?: (rowsPerPage: number) => void;
+  onAddUser?: () => void;
 }
 
 // Interfaz para el diálogo
@@ -73,11 +110,13 @@ export function CustomersTable({
   count = 0,
   rows = [],
   page = 0,
-  rowsPerPage = 5,
+  rowsPerPage = 10,
   onPageChange,
   onRowsPerPageChange,
+  onAddUser,
 }: CustomersTableProps): React.JSX.Element {
-  // Estado del diálogo mejorado
+  const dispatch = useAppDispatch();
+  const router = useRouter();
   const [dialogState, setDialogState] = React.useState<DialogState>({
     open: false,
     title: '',
@@ -89,9 +128,7 @@ export function CustomersTable({
   const [roleFilter, setRoleFilter] = React.useState('');
   const [currentPage, setCurrentPage] = React.useState(page);
   const [rowsPerPageState, setRowsPerPageState] = React.useState(rowsPerPage);
-  const router = useRouter();
 
-  // Función para abrir el diálogo con parámetros específicos
   const openConfirmDialog = (title: string, message: string, action: () => void) => {
     setDialogState({
       open: true,
@@ -101,7 +138,6 @@ export function CustomersTable({
     });
   };
 
-  // Función para cerrar el diálogo
   const closeDialog = () => {
     setDialogState({
       ...dialogState,
@@ -109,10 +145,40 @@ export function CustomersTable({
     });
   };
 
-  // Función para ejecutar la acción y cerrar el diálogo
   const handleConfirm = () => {
     dialogState.action();
     closeDialog();
+  };
+
+  const handleRoleChange = async (userId: string, newRoleId: string) => {
+    try {
+      await dispatch(updateUserRole({ userId, roleId: newRoleId })).unwrap();
+      dispatch(fetchAllUsers());
+    } catch (error) {
+      console.error('Error al actualizar el rol:', error);
+    }
+  };
+
+  const handleSuspendUser = async (userId: string, isSuspended: boolean) => {
+    try {
+      await dispatch(suspendUser({ 
+        userId, 
+        action: isSuspended ? 'activate' : 'suspend',
+        reason: isSuspended ? undefined : 'Suspensión administrativa'
+      })).unwrap();
+      dispatch(fetchAllUsers());
+    } catch (error) {
+      console.error('Error al suspender/activar usuario:', error);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      await dispatch(deleteUser(userId)).unwrap();
+      dispatch(fetchAllUsers());
+    } catch (error) {
+      console.error('Error al eliminar usuario:', error);
+    }
   };
 
   const filteredRows = React.useMemo(() => {
@@ -121,7 +187,7 @@ export function CustomersTable({
         row.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         row.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesRole = roleFilter ? row.role === roleFilter : true;
+      const matchesRole = roleFilter ? row.role.name === roleFilter : true;
       return matchesSearch && matchesRole;
     });
   }, [rows, searchTerm, roleFilter]);
@@ -176,10 +242,17 @@ export function CustomersTable({
               sx={{ minWidth: 150 }}
             >
               <MenuItem value="">Todos los roles</MenuItem>
-              <MenuItem value="admin">Admin</MenuItem>
-              <MenuItem value="user">Usuario</MenuItem>
+              {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                <MenuItem key={value} value={value}>
+                  {label}
+                </MenuItem>
+              ))}
             </Select>
-            <Button startIcon={<PlusIcon size={18} />} variant="contained">
+            <Button 
+              startIcon={<PlusIcon size={18} />} 
+              variant="contained"
+              onClick={onAddUser}
+            >
               Nuevo Usuario
             </Button>
           </Stack>
@@ -198,7 +271,7 @@ export function CustomersTable({
                   openConfirmDialog(
                     'Confirmar suspensión',
                     '¿Estás seguro de que deseas suspender los usuarios seleccionados?',
-                    () => console.log('Suspendiendo usuarios', Array.from(selected)),
+                    () => Array.from(selected).forEach(userId => handleSuspendUser(userId, false))
                   )
                 }
               >
@@ -213,7 +286,7 @@ export function CustomersTable({
                   openConfirmDialog(
                     'Confirmar eliminación',
                     '¿Estás seguro de que deseas eliminar los usuarios seleccionados?',
-                    () => console.log('Eliminando usuarios', Array.from(selected)),
+                    () => Array.from(selected).forEach(handleDeleteUser)
                   )
                 }
               >
@@ -281,41 +354,53 @@ export function CustomersTable({
                   </TableCell>
                   <TableCell>{row.phone}</TableCell>
                   <TableCell>
-                    <Select
-                      size="small"
-                      value={row.role}
-                      onChange={(e) =>
-                        openConfirmDialog(
-                          'Cambiar rol',
-                          `¿Cambiar rol de ${row.name} a ${e.target.value}?`,
-                          () => console.log(`Cambiando rol de ${row.name} a ${e.target.value}`),
-                        )
-                      }
-                    >
-                      <MenuItem value="admin">Admin</MenuItem>
-                      <MenuItem value="user">Usuario</MenuItem>
-                    </Select>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Chip 
+                        label={ROLE_LABELS[row.role.name as keyof typeof ROLE_LABELS] || row.role.name}
+                        color={ROLE_COLORS[row.role.name as keyof typeof ROLE_COLORS] || 'default'}
+                        size="small"
+                      />
+                      <Select
+                        size="small"
+                        value={row.role.id}
+                        onChange={(e) => {
+                          const newRoleId = e.target.value;
+                          const newRole = Object.values(ROLES).find(role => role.id === newRoleId);
+                          openConfirmDialog(
+                            'Cambiar rol',
+                            `¿Cambiar rol de ${row.role.name} a ${newRole?.name || 'nuevo rol'}?`,
+                            () => handleRoleChange(row.id, newRoleId),
+                          );
+                        }}
+                      >
+                        {Object.values(ROLES).map((role) => (
+                          <MenuItem key={role.id} value={role.id}>
+                            {ROLE_LABELS[role.name]}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </Stack>
                   </TableCell>
                   <TableCell>{dayjs(row.createdAt).format('MMM D, YYYY')}</TableCell>
                   <TableCell>
                     <Stack direction="row" spacing={1}>
                       <Tooltip title="Ver Usuario">
-                        <IconButton onClick={() => router.push(`/dashboard/customers/0001`)}>
+                        <IconButton onClick={() => router.push(`/dashboard/customers/${row.id}`)}>
                           <UserIcon size={20} />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title="Suspender Usuario">
+                      <Tooltip title={row.isSuspended ? "Activar Usuario" : "Suspender Usuario"}>
                         <IconButton
-                          color="warning"
+                          color={row.isSuspended ? "success" : "warning"}
                           onClick={() =>
                             openConfirmDialog(
-                              'Suspender usuario',
-                              `¿Estás seguro de que deseas suspender a ${row.name}?`,
-                              () => console.log(`Suspendiendo a ${row.name}`),
+                              row.isSuspended ? 'Activar usuario' : 'Suspender usuario',
+                              `¿Estás seguro de que deseas ${row.isSuspended ? 'activar' : 'suspender'} a ${row.name}?`,
+                              () => handleSuspendUser(row.id, row.isSuspended || false),
                             )
                           }
                         >
-                          <ProhibitIcon size={20} />
+                          {row.isSuspended ? <CheckCircleIcon size={20} /> : <ProhibitIcon size={20} />}
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Eliminar Usuario">
@@ -325,7 +410,7 @@ export function CustomersTable({
                             openConfirmDialog(
                               'Eliminar usuario',
                               `¿Estás seguro de que deseas eliminar a ${row.name}?`,
-                              () => console.log(`Eliminando a ${row.name}`),
+                              () => handleDeleteUser(row.id),
                             )
                           }
                         >
@@ -349,7 +434,7 @@ export function CustomersTable({
         onRowsPerPageChange={handleChangeRowsPerPage}
         page={currentPage}
         rowsPerPage={rowsPerPageState}
-        rowsPerPageOptions={[5, 10, 25]}
+        rowsPerPageOptions={[10, 25]}
       />
     </Card>
   );

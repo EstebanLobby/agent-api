@@ -22,7 +22,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export function SignInForm() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { loading, error } = useAppSelector((state) => state.auth);
+  const { isLoading, error } = useAppSelector((state) => state.auth);
 
   const {
     register,
@@ -71,7 +71,7 @@ export function SignInForm() {
         {...register('email')}
         error={!!errors.email}
         helperText={errors.email?.message}
-        disabled={loading}
+        disabled={isLoading}
       />
 
       <TextField
@@ -85,7 +85,7 @@ export function SignInForm() {
         {...register('password')}
         error={!!errors.password}
         helperText={errors.password?.message}
-        disabled={loading}
+        disabled={isLoading}
       />
 
       <Button
@@ -93,9 +93,9 @@ export function SignInForm() {
         fullWidth
         variant="contained"
         sx={{ mt: 3, mb: 2, height: 48 }}
-        disabled={loading || isSubmitting || !isValid}
+        disabled={isLoading || isSubmitting || !isValid}
       >
-        {loading ? <CircularProgress size={24} color="primary" /> : 'Iniciar sesión'}
+        {isLoading ? <CircularProgress size={24} color="primary" /> : 'Iniciar sesión'}
       </Button>
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
