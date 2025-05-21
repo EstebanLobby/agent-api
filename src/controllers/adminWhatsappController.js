@@ -1,7 +1,7 @@
 const { getClient } = require("../services/whatsapp/clientManager");
 const Session = require("../models/Session");
 const User = require("../models/User");
-const { enviarMensaje } = require("../services/whatsapp/whatsapp.service");
+const { enviarMensaje, verificarEstadoSesion } = require("../services/whatsapp/whatsapp.service");
 
 // Obtener todas las sesiones activas
 const obtenerSesionesActivas = async (req, res) => {
@@ -81,22 +81,26 @@ const enviarMensajeComoUsuario = async (req, res) => {
       });
     }
 
-
+    // 5. Verificar estado de la sesión
+    const estadoSesion = await verificarEstadoSesion(userId);
+    if (!estadoSesion.isActive) {
+      return res.status(400).json({
+        success: false,
+        error: "El usuario no tiene una sesión activa de WhatsApp"
+      });
+    }
 
     // 6. Enviar el mensaje usando clientManager
-    // Usar el servicio de envío de mensajes que ya funciona
     const respuesta = await enviarMensaje(userId, numero, mensaje);
     
     if (respuesta.error) {    
-            return res.status(400).json(respuesta);
-      }
-        
-
+      return res.status(400).json(respuesta);
+    }
     
-      return res.status(200).json({ 
-        success: true, 
-        message: "Mensaje enviado exitosamente" 
-      });
+    return res.status(200).json({ 
+      success: true, 
+      message: "Mensaje enviado exitosamente" 
+    });
     
   } catch (error) {
     console.error("❌ Error general en enviarMensajeComoUsuario:", error);

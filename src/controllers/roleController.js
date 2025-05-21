@@ -207,15 +207,51 @@ const getOwnerUsers = async (req, res) => {
     // El ID del owner viene del token de autenticación
     const ownerId = req.user.id;
 
-    // Buscamos todos los usuarios que tengan este owner asignado
+    // Primero verificamos que el usuario existe y es un owner
+    const owner = await User.findById(ownerId)
+      .populate('role')
+      .lean();
+
+    if (!owner) {
+      return res.status(404).json({ 
+        message: "Usuario no encontrado",
+        users: [],
+        total: 0
+      });
+    }
+
+    if (owner.role.name !== 'owner') {
+      return res.status(403).json({ 
+        message: "El usuario no tiene rol de owner",
+        users: [],
+        total: 0
+      });
+    }
+
+    // Buscamos el rol de owner
+    const ownerRole = await Role.findOne({ name: 'owner' });
+    if (!ownerRole) {
+      return res.status(404).json({ 
+        message: "Rol de owner no encontrado",
+        users: [],
+        total: 0
+      });
+    }
+
+    // Buscamos todos los usuarios que estén en el array users del rol owner
     const users = await User.find({ 
-      owner: ownerId
+      _id: { $in: ownerRole.users }
     })
     .select('username email role createdAt updatedAt')
     .populate('role', 'name')
     .lean();
 
     res.status(200).json({
+      owner: {
+        id: owner._id,
+        username: owner.username,
+        email: owner.email
+      },
       users,
       total: users.length
     });

@@ -64,4 +64,28 @@ export const removeUserFromOwner = createAsyncThunk<{ userId: string }, { ownerI
       return rejectWithValue(error.response?.data?.message || 'Error al remover usuario del owner');
     }
   }
+);
+
+// Enviar mensaje de WhatsApp como usuario
+export const enviarMensajeWhatsApp = createAsyncThunk<
+  { success: boolean; message: string },
+  { userId: string; numero: string; mensaje: string },
+  { rejectValue: string }
+>(
+  'role/enviarMensajeWhatsApp',
+  async ({ userId, numero, mensaje }, { rejectWithValue }) => {
+    try {
+      logger.debug('Enviando mensaje de WhatsApp:', { userId, numero, mensaje });
+      const response = await api.post<{ success: boolean; message: string }>('/admin/whatsapp/send-as-user', {
+        userId,
+        numero,
+        mensaje
+      });
+      logger.debug('Mensaje enviado:', response.data);
+      return response.data;
+    } catch (error: any) {
+      logger.error('Error al enviar mensaje de WhatsApp:', error);
+      return rejectWithValue(error.response?.data?.error || 'Error al enviar mensaje de WhatsApp');
+    }
+  }
 ); 

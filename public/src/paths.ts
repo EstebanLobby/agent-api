@@ -18,7 +18,7 @@ export const paths = {
     },
     users: {
       path: '/dashboard/users',
-      roles: ['admin'],
+      roles: ['owner'],
     },
     owners: {
       path: '/dashboard/owners',
