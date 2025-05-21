@@ -26,6 +26,7 @@ export interface User {
   __v: number;
   id: string;
   name: string;
+  ownerId?: string;
 }
 
 export interface UpdateUserProfilePayload {

@@ -1,9 +1,23 @@
 // clientManager.js
 const { Client, LocalAuth } = require("whatsapp-web.js");
 const Session = require('../../models/Session');
+const fs = require('fs').promises;
+const path = require('path');
 
 // Cache en memoria para los clientes activos
 global.clients = global.clients || {};
+
+// Función para limpiar archivos de sesión
+async function limpiarArchivosSesion(userId) {
+  try {
+    const sessionDir = path.join(process.cwd(), '.wwebjs_auth', `session-${userId}`);
+    if (await fs.access(sessionDir).then(() => true).catch(() => false)) {
+      await fs.rm(sessionDir, { recursive: true, force: true });
+    }
+  } catch (error) {
+    console.error(`Error al limpiar archivos de sesión para ${userId}:`, error);
+  }
+}
 
 // Agregar un cliente a la memoria y actualizar la DB
 async function addClient(userId, client) {
@@ -45,7 +59,15 @@ async function getClient(userId) {
       authStrategy: new LocalAuth({ clientId: session.sessionId }),
       puppeteer: {
         headless: true,
-        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+        args: [
+          "--no-sandbox", 
+          "--disable-setuid-sandbox", 
+          "--disable-dev-shm-usage",
+          "--disable-accelerated-2d-canvas",
+          "--no-first-run",
+          "--no-zygote",
+          "--disable-gpu"
+        ],
       },
     });
     
@@ -63,14 +85,7 @@ async function getClient(userId) {
     
     client.on("disconnected", async (reason) => {
       console.log(`Cliente desconectado: ${userId}, razón: ${reason}`);
-      await Session.findOneAndUpdate(
-        { userId },
-        { 
-          status: 'disconnected',
-          updatedAt: new Date()
-        }
-      );
-      removeClient(userId);
+      await removeClient(userId);
     });
     
     // Inicializar el cliente
@@ -90,6 +105,9 @@ async function removeClient(userId) {
   if (global.clients[userId]) {
     const client = global.clients[userId];
     
+    // Remover event listeners primero
+    client.removeAllListeners();
+    
     // Intentar desconectar limpiamente
     try {
       await client.destroy();
@@ -108,12 +126,15 @@ async function removeClient(userId) {
         updatedAt: new Date()
       }
     );
+
+    // Limpiar archivos de sesión
+    await limpiarArchivosSesion(userId);
     
     console.log(`Cliente eliminado: ${userId}`);
   }
 }
 
-// Verificar y limpiar sesiones antiguas (opcional)
+// Verificar y limpiar sesiones antiguas
 async function limpiarSesionesInactivas() {
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - 7); // 7 días de inactividad

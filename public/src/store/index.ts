@@ -2,6 +2,7 @@ import { configureStore, Middleware } from '@reduxjs/toolkit';
 import { useDispatch, useSelector, TypedUseSelectorHook } from 'react-redux';
 import authReducer, { AuthState } from './slices/auth/auth-slice';
 import userReducer, { UserState } from './slices/user/user-slice';
+import roleReducer from './slices/role/role-slice';
 import createAuthMiddleware from './middleware/auth-middleware';
 import { createLogger } from '@/lib/logger';
 
@@ -11,6 +12,7 @@ const logger = createLogger({ prefix: '[Store]' });
 export interface RootState {
   auth: AuthState;
   user: UserState;
+  role: ReturnType<typeof roleReducer>;
 }
 
 // Middleware para manejar tokens JWT
@@ -41,6 +43,7 @@ const persistenceMiddleware: Middleware = (store) => (next) => (action) => {
         user: {
           user: state.user.user,
         },
+        role: state.role,
       };
       localStorage.setItem('redux_state', JSON.stringify(persistData));
     } else {
@@ -69,6 +72,7 @@ const loadPersistedState = (): Partial<RootState> | undefined => {
             user: {
               ...userReducer(undefined, { type: 'INIT' }),
             },
+            role: roleReducer(undefined, { type: 'INIT' }),
           };
         }
         return {
@@ -81,6 +85,7 @@ const loadPersistedState = (): Partial<RootState> | undefined => {
             ...userReducer(undefined, { type: 'INIT' }),
             ...parsedState.user,
           },
+          role: roleReducer(parsedState.role),
         };
       }
     } catch (error) {
@@ -94,6 +99,7 @@ export const store = configureStore({
   reducer: {
     auth: authReducer as typeof authReducer & { (state: AuthState | undefined, action: any): AuthState },
     user: userReducer as typeof userReducer & { (state: UserState | undefined, action: any): UserState },
+    role: roleReducer,
   },
   preloadedState: loadPersistedState(),
   middleware: (getDefaultMiddleware) =>

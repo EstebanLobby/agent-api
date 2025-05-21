@@ -48,9 +48,18 @@ const getOwnerUsersById = async (req, res) => {
       });
     }
 
-    // Buscamos todos los usuarios que tengan este owner asignado
+    // Buscamos el rol de owner
+    const ownerRole = await Role.findOne({ name: 'owner' });
+    if (!ownerRole) {
+      return res.status(404).json({ 
+        message: "Rol de owner no encontrado",
+        users: []
+      });
+    }
+
+    // Buscamos todos los usuarios que estén en el array users del rol owner
     const users = await User.find({ 
-      owner: ownerId
+      _id: { $in: ownerRole.users }
     })
     .select('username email role createdAt updatedAt')
     .populate('role', 'name')
@@ -116,9 +125,21 @@ const assignUserToOwner = async (req, res) => {
     const { ownerId } = req.params;
     const { userId } = req.body;
 
-    const owner = await Role.findById(ownerId);
-    if (!owner || owner.name !== "owner") {
-      return res.status(404).json({ message: "Owner no encontrado" });
+    // Primero buscamos el usuario que es owner
+    const ownerUser = await User.findById(ownerId);
+    if (!ownerUser) {
+      return res.status(404).json({ message: "Usuario owner no encontrado" });
+    }
+
+    // Luego buscamos el rol owner
+    const ownerRole = await Role.findOne({ name: "owner" });
+    if (!ownerRole) {
+      return res.status(404).json({ message: "Rol owner no encontrado" });
+    }
+
+    // Verificamos que el usuario tenga el rol de owner
+    if (!ownerUser.role.equals(ownerRole._id)) {
+      return res.status(403).json({ message: "El usuario no tiene rol de owner" });
     }
 
     const user = await User.findById(userId);
@@ -127,12 +148,12 @@ const assignUserToOwner = async (req, res) => {
     }
 
     // Verificar si el usuario ya está asignado
-    if (owner.users.includes(userId)) {
+    if (ownerRole.users.includes(userId)) {
       return res.status(400).json({ message: "El usuario ya está asignado a este owner" });
     }
 
-    owner.users.push(userId);
-    await owner.save();
+    ownerRole.users.push(userId);
+    await ownerRole.save();
 
     res.status(200).json({ message: "Usuario asignado correctamente" });
   } catch (error) {
@@ -143,23 +164,39 @@ const assignUserToOwner = async (req, res) => {
 // Remover un usuario de un owner
 const removeUserFromOwner = async (req, res) => {
   try {
-    const { ownerId, userId } = req.params;
+    const { ownerId } = req.params;
+    const { userId } = req.body;
+    if(!userId) {
+      return res.status(400).json({ message: "El usuario se ingreso incorrectamente" });
+    }
+    // Primero buscamos el usuario que es owner y poblamos su rol
+    const ownerUser = await User.findById(ownerId).populate('role');
+    if (!ownerUser) {
+      return res.status(404).json({ message: "Usuario owner no encontrado" });
+    }
 
-    const owner = await Role.findById(ownerId);
-    if (!owner || owner.name !== "owner") {
-      return res.status(404).json({ message: "Owner no encontrado" });
+    // Luego buscamos el rol owner
+    const ownerRole = await Role.findOne({ name: "owner" });
+    if (!ownerRole) {
+      return res.status(404).json({ message: "Rol owner no encontrado" });
+    }
+
+    // Verificamos que el usuario tenga el rol de owner
+    if (ownerUser.role.name !== 'owner') {
+      return res.status(403).json({ message: "El usuario no tiene rol de owner" });
     }
 
     // Verificar si el usuario está asignado
-    if (!owner.users.includes(userId)) {
+    if (!ownerRole.users.includes(userId)) {
       return res.status(400).json({ message: "El usuario no está asignado a este owner" });
     }
 
-    owner.users = owner.users.filter(id => id.toString() !== userId);
-    await owner.save();
+    ownerRole.users = ownerRole.users.filter(id => id.toString() !== userId);
+    await ownerRole.save();
 
     res.status(200).json({ message: "Usuario removido correctamente" });
   } catch (error) {
+    console.error("❌ Error al remover usuario del owner:", error);
     res.status(500).json({ error: error.message });
   }
 };

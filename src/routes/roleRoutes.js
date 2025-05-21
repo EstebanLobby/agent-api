@@ -53,8 +53,8 @@ router.post(
 );
 
 // Remover un usuario de un owner
-router.delete(
-  "/owner/:ownerId/users/:userId",
+router.post(
+  "/owner/:ownerId/users/remove",
   authMiddleware,
   roleMiddleware(["admin"]),
   removeUserFromOwner
