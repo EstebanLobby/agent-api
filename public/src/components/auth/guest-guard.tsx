@@ -23,7 +23,7 @@ export function GuestGuard({ children }: GuestGuardProps): React.JSX.Element | n
   React.useEffect(() => {
     if (isInitialized && isAuthenticated && AUTH_ROUTES.includes(pathname)) {
       logger.debug('Usuario autenticado en ruta de auth, redirigiendo a dashboard');
-      router.replace('/dashboard');
+      router.replace('/dashboard/integrations');
     }
   }, [isAuthenticated, isInitialized, router, pathname]);
 

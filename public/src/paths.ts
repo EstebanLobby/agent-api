@@ -7,7 +7,7 @@ export const paths = {
     unauthorized: '/auth/unauthorized',
   },
   dashboard: {
-    overview: { path: '/dashboard', roles: ['admin', 'member', 'owner'] },
+    overview: { path: '/dashboard', roles: ['admin'] },
     account: { path: '/dashboard/account', roles: ['admin', 'member', 'owner'] },
     customers: {
       path: '/dashboard/customers',

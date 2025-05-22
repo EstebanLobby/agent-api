@@ -45,6 +45,9 @@ export function BoardIntegrations({ sx }: { sx?: any }): React.JSX.Element {
   const [selectedIntegration, setSelectedIntegration] = useState<Order | null>(null);
   const [messageModalOpen, setMessageModalOpen] = useState(false);
 
+  // Verificar si ya existe una integración conectada
+  const hasConnectedIntegration = integrations.some(integration => integration.status === 'connected');
+
   const fetchIntegrations = async () => {
     setLoading(true);
     try {
@@ -87,11 +90,9 @@ export function BoardIntegrations({ sx }: { sx?: any }): React.JSX.Element {
     if (selectedIntegration) {
       setConnectingId(selectedIntegration._id);
       try {
-        // Llamada a la API para conectar la sesión
         await whatsappClient.connectSession(selectedIntegration._id);
         logger.info(`Connecting session: ${selectedIntegration.numero}`);
         
-        // Actualizar el estado local inmediatamente (optimistic update)
         setIntegrations(prev => 
           prev.map(integration => 
             integration._id === selectedIntegration._id 
@@ -100,7 +101,6 @@ export function BoardIntegrations({ sx }: { sx?: any }): React.JSX.Element {
           )
         );
         
-        // Recargar después de un momento para obtener el estado real
         setTimeout(() => {
           fetchIntegrations();
         }, 2000);
@@ -117,11 +117,9 @@ export function BoardIntegrations({ sx }: { sx?: any }): React.JSX.Element {
   const handleDisconnect = async () => {
     if (selectedIntegration) {
       try {
-        // Llamada a la API para desconectar la sesión
         await whatsappClient.disconnectSession(selectedIntegration._id);
         logger.info(`Disconnecting session: ${selectedIntegration.numero}`);
         
-        // Actualizar el estado local inmediatamente
         setIntegrations(prev => 
           prev.map(integration => 
             integration._id === selectedIntegration._id 
@@ -138,7 +136,6 @@ export function BoardIntegrations({ sx }: { sx?: any }): React.JSX.Element {
   };
 
   const handleOpenMessageModal = () => {
-    // Solo permitir enviar mensajes si la sesión está conectada
     if (selectedIntegration?.status === 'connected') {
       setMessageModalOpen(true);
     }
@@ -165,10 +162,6 @@ export function BoardIntegrations({ sx }: { sx?: any }): React.JSX.Element {
           <MenuItem key="message" onClick={handleOpenMessageModal}>
             <MessageIcon style={{ marginRight: 8 }} />
             Enviar Mensaje
-          </MenuItem>,
-          <MenuItem key="disconnect" onClick={handleDisconnect}>
-            <DisconnectIcon style={{ marginRight: 8 }} />
-            Desconectar
           </MenuItem>
         ];
       
@@ -201,6 +194,8 @@ export function BoardIntegrations({ sx }: { sx?: any }): React.JSX.Element {
               onClick={() => {
                 setOpen(true);
               }}
+              disabled={hasConnectedIntegration}
+              title={hasConnectedIntegration ? "Ya existe una integración conectada" : "Agregar nueva integración"}
             >
               Add
             </Button>
@@ -272,7 +267,6 @@ export function BoardIntegrations({ sx }: { sx?: any }): React.JSX.Element {
       </Box>
       <Divider />
       
-      {/* Menú desplegable dinámico */}
       <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={handleMenuClose}>
         {renderMenuItems()}
       </Menu>

@@ -61,7 +61,7 @@ export function SignUpForm(): React.JSX.Element {
         const result = await authClient.signUp(values);
         if (result.data) {
           // Registro y login exitosos
-          router.push('/dashboard');
+          router.push('/dashboard/integrations');
         } else if (result.error) {
           setError('root', { type: 'server', message: result.error });
         }
