@@ -15,6 +15,9 @@ import TableRow from '@mui/material/TableRow';
 import { ArrowClockwise as ReloadIcon } from '@phosphor-icons/react/dist/ssr/ArrowClockwise';
 import { DotsThreeVertical as DotsThreeVerticalIcon } from '@phosphor-icons/react/dist/ssr/DotsThreeVertical';
 import { Plus as PlusIcon } from '@phosphor-icons/react/dist/ssr/Plus';
+import { PlugsConnected as ConnectIcon } from '@phosphor-icons/react/dist/ssr/PlugsConnected';
+import { Prohibit as DisconnectIcon } from '@phosphor-icons/react/dist/ssr/Prohibit';
+import { PaperPlaneRight as MessageIcon } from '@phosphor-icons/react/dist/ssr/PaperPlaneRight';
 import { whatsappClient } from '@/lib/whatsappApi/whatsapp-api';
 import { AddWhatsAppNumber } from './add-whatsapp-number';
 import { SendMessageModal } from './send-message-modal';
@@ -37,6 +40,7 @@ export function BoardIntegrations({ sx }: { sx?: any }): React.JSX.Element {
   const [open, setOpen] = useState(false);
   const [integrations, setIntegrations] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
+  const [connectingId, setConnectingId] = useState<string | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [selectedIntegration, setSelectedIntegration] = useState<Order | null>(null);
   const [messageModalOpen, setMessageModalOpen] = useState(false);
@@ -79,22 +83,116 @@ export function BoardIntegrations({ sx }: { sx?: any }): React.JSX.Element {
     setSelectedIntegration(null);
   };
 
-  const handleDisconnect = () => {
+  const handleConnect = async () => {
     if (selectedIntegration) {
-      // Aquí podrías llamar a una función para desconectar el número.
+      setConnectingId(selectedIntegration._id);
+      try {
+        // Llamada a la API para conectar la sesión
+        await whatsappClient.connectSession(selectedIntegration._id);
+        logger.info(`Connecting session: ${selectedIntegration.numero}`);
+        
+        // Actualizar el estado local inmediatamente (optimistic update)
+        setIntegrations(prev => 
+          prev.map(integration => 
+            integration._id === selectedIntegration._id 
+              ? { ...integration, status: 'pending' as const }
+              : integration
+          )
+        );
+        
+        // Recargar después de un momento para obtener el estado real
+        setTimeout(() => {
+          fetchIntegrations();
+        }, 2000);
+        
+      } catch (error) {
+        logger.error('Error connecting session:', error);
+      } finally {
+        setConnectingId(null);
+      }
+    }
+    handleMenuClose();
+  };
+
+  const handleDisconnect = async () => {
+    if (selectedIntegration) {
+      try {
+        // Llamada a la API para desconectar la sesión
+        await whatsappClient.disconnectSession(selectedIntegration._id);
+        logger.info(`Disconnecting session: ${selectedIntegration.numero}`);
+        
+        // Actualizar el estado local inmediatamente
+        setIntegrations(prev => 
+          prev.map(integration => 
+            integration._id === selectedIntegration._id 
+              ? { ...integration, status: 'disconnected' as const }
+              : integration
+          )
+        );
+        
+      } catch (error) {
+        logger.error('Error disconnecting session:', error);
+      }
     }
     handleMenuClose();
   };
 
   const handleOpenMessageModal = () => {
-    setMessageModalOpen(true);
+    // Solo permitir enviar mensajes si la sesión está conectada
+    if (selectedIntegration?.status === 'connected') {
+      setMessageModalOpen(true);
+    }
     handleMenuClose();
+  };
+
+  const renderMenuItems = () => {
+    if (!selectedIntegration) return null;
+
+    const { status } = selectedIntegration;
+    const isConnecting = connectingId === selectedIntegration._id;
+
+    switch (status) {
+      case 'disconnected':
+        return (
+          <MenuItem onClick={handleConnect} disabled={isConnecting}>
+            <ConnectIcon style={{ marginRight: 8 }} />
+            {isConnecting ? 'Conectando...' : 'Conectar'}
+          </MenuItem>
+        );
+      
+      case 'connected':
+        return [
+          <MenuItem key="message" onClick={handleOpenMessageModal}>
+            <MessageIcon style={{ marginRight: 8 }} />
+            Enviar Mensaje
+          </MenuItem>,
+          <MenuItem key="disconnect" onClick={handleDisconnect}>
+            <DisconnectIcon style={{ marginRight: 8 }} />
+            Desconectar
+          </MenuItem>
+        ];
+      
+      case 'pending':
+        return [
+          <MenuItem key="message" onClick={handleOpenMessageModal} disabled>
+            <MessageIcon style={{ marginRight: 8, opacity: 0.5 }} />
+            Enviar Mensaje (Conectando...)
+          </MenuItem>,
+          <MenuItem key="disconnect" onClick={handleDisconnect}>
+            <DisconnectIcon style={{ marginRight: 8 }} />
+            Desconectar
+          </MenuItem>
+        ];
+      
+      default:
+        return null;
+    }
   };
 
   return (
     <Card sx={sx}>
       <CardHeader
-        title="Integracion Whatsapp"
+        title="Integración WhatsApp"
         action={
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
@@ -131,7 +229,7 @@ export function BoardIntegrations({ sx }: { sx?: any }): React.JSX.Element {
           <TableHead>
             <TableRow>
               <TableCell>Fecha</TableCell>
-              <TableCell>Numero</TableCell>
+              <TableCell>Número</TableCell>
               <TableCell>Estado</TableCell>
               <TableCell />
             </TableRow>
@@ -142,12 +240,18 @@ export function BoardIntegrations({ sx }: { sx?: any }): React.JSX.Element {
                 label: 'Unknown',
                 color: 'default',
               };
+              const isConnecting = connectingId === value._id;
+              
               return (
                 <TableRow hover key={value._id}>
                   <TableCell>{value.createdAt}</TableCell>
                   <TableCell>{value.numero}</TableCell>
                   <TableCell>
-                    <Chip color={color} label={label} size="small" />
+                    <Chip 
+                      color={color} 
+                      label={isConnecting ? 'conectando...' : label} 
+                      size="small" 
+                    />
                   </TableCell>
                   <TableCell sx={{ textAlign: 'right', width: '50px' }}>
                     <IconButton
@@ -155,6 +259,7 @@ export function BoardIntegrations({ sx }: { sx?: any }): React.JSX.Element {
                       onClick={(e) => {
                         handleMenuOpen(e, value);
                       }}
+                      disabled={isConnecting}
                     >
                       <DotsThreeVerticalIcon weight="bold" />
                     </IconButton>
@@ -166,10 +271,10 @@ export function BoardIntegrations({ sx }: { sx?: any }): React.JSX.Element {
         </Table>
       </Box>
       <Divider />
-      {/* Menú desplegable */}
+      
+      {/* Menú desplegable dinámico */}
       <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={handleMenuClose}>
-        <MenuItem onClick={handleDisconnect}>Desconectar</MenuItem>
-        <MenuItem onClick={handleOpenMessageModal}>Enviar Mensaje</MenuItem>
+        {renderMenuItems()}
       </Menu>
 
       <SendMessageModal

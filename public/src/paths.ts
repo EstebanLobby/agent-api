@@ -11,8 +11,8 @@ export const paths = {
     account: { path: '/dashboard/account', roles: ['admin', 'member', 'owner'] },
     customers: {
       path: '/dashboard/customers',
-      roles: ['admin', 'owner'],
-      new: { path: '/dashboard/customers/new', roles: ['admin', 'owner'] },
+      roles: ['admin'],
+      new: { path: '/dashboard/customers/new', roles: ['admin'] },
       details: (id: string) => `/dashboard/customers/${id}`,
       edit: (id: string) => `/dashboard/customers/${id}/edit`,
     },
@@ -20,13 +20,9 @@ export const paths = {
       path: '/dashboard/users',
       roles: ['owner'],
     },
-    owners: {
-      path: '/dashboard/owners',
-      roles: ['admin'],
-    },
-    documentacion: { path: '/dashboard/documentacion', roles: ['admin', 'member', 'owner'] },
+    documentacion: { path: '/dashboard/documentacion', roles: ['admin', 'owner'] },
     integrations: { path: '/dashboard/integrations', roles: ['admin', 'member', 'owner'] },
-    settings: { path: '/dashboard/settings', roles: ['admin', 'owner'] },
+    settings: { path: '/dashboard/settings', roles: ['admin'] },
   },
   errors: {
     notFound: '/errors/not-found',

@@ -4,7 +4,6 @@ import { Stack, Typography } from '@mui/material';
 
 import { config } from '@/config';
 import { BoardIntegrations } from '@/components/dashboard/integrations/board-integrations';
-import { BoardResource } from '@/components/dashboard/integrations/board-resource';
 
 export const metadata = {
   title: `Integracion ${config.site.name}`,
@@ -19,7 +18,6 @@ export default function Page(): React.JSX.Element {
         </Stack>
       </Stack>
       <BoardIntegrations sx={{ height: '100%' }} />
-      <BoardResource sx={{ height: '100%' }} />
     </Stack>
   );
 }

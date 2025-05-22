@@ -1,7 +1,6 @@
-import getPath from '@/helpers/get-path';
-
 import type { NavItemConfig } from '@/types/nav';
 import { paths } from '@/paths';
+import { getPath } from '@/helpers/get-path'; 
 
 export const navItems = [
   {
@@ -15,13 +14,6 @@ export const navItems = [
     title: 'Usuarios',
     href: getPath(paths.dashboard.users),
     icon: 'users',
-    roles: ['admin'],
-  },
-  {
-    key: 'owners',
-    title: 'Owners',
-    href: getPath(paths.dashboard.owners),
-    icon: 'crown',
     roles: ['admin'],
   },
   {

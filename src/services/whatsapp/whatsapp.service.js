@@ -41,19 +41,35 @@ async function restaurarSesionesActivas() {
 }
 
 async function iniciarCliente(userId, numero) {
-  if (clients[userId]) return clients[userId];
+  console.log('🔍 ======================');
+  console.log('🔍 iniciarCliente INICIO');
+  console.log('🔍 userId:', userId);
+  console.log('🔍 numero:', numero);
+  console.log('🔍 io disponible:', !!io);
+  console.log('🔍 io.engine:', !!io?.engine);
+  console.log('🔍 clientes conectados:', io?.engine?.clientsCount || 'N/A');
+  console.log('🔍 ======================');
+
+  if (clients[userId]) {
+    console.log('🔍 Cliente ya existe, retornando...');
+    return clients[userId];
+  }
 
   let session = await Session.findOne({ userId });
-  console.log('session',session)
+  console.log('🔍 session encontrada:', session);
+  
   if (!session) {
+    console.log('🔍 Creando nueva session...');
     session = await Session.create({ 
       userId, 
       sessionId: Date.now().toString(), 
       status: "created",
       numero: numero 
     });
+    console.log('🔍 Session creada:', session._id);
   }
 
+  console.log('🔍 Creando cliente WhatsApp...');
   const client = new Client({
     authStrategy: new LocalAuth({ clientId: session.sessionId }),
     puppeteer: {
@@ -73,14 +89,40 @@ async function iniciarCliente(userId, numero) {
     },
   });
 
+  console.log('🔍 Agregando cliente al manager...');
   addClient(userId, client);
 
-  client.on("qr", (qr) => handleQR(io, qr, userId, session, qrCodes, QR_REFRESH_TIME));
-  client.on("ready", () => handleReady(io, userId, client, session));
+  console.log('🔍 Configurando event listeners...');
+  
+  client.on("qr", (qr) => {
+    console.log('🔍 🔥 ¡EVENTO QR DISPARADO!');
+    console.log('🔍 QR length:', qr?.length);
+    console.log('🔍 io en evento QR:', !!io);
+    console.log('🔍 Llamando handleQR...');
+    
+    if (!io) {
+      console.error('❌ IO NO DISPONIBLE EN EVENTO QR');
+      return;
+    }
+    
+    handleQR(io, qr, userId, session, qrCodes, QR_REFRESH_TIME);
+  });
+  
+  client.on("ready", () => {
+    console.log('🔍 🔥 ¡EVENTO READY DISPARADO!');
+    handleReady(io, userId, client, session);
+  });
+  
   client.on("message", (msg) => handleMessage(msg, client));
-  client.on("disconnected", (reason) => handleDisconnected(userId, session, removeClient));
+  client.on("disconnected", (reason) => {
+    console.log('🔍 🔥 ¡EVENTO DISCONNECTED DISPARADO!', reason);
+    handleDisconnected(userId, session, removeClient);
+  });
 
+  console.log('🔍 Inicializando cliente WhatsApp...');
   await client.initialize();
+  console.log('🔍 ✅ Cliente inicializado exitosamente');
+  
   return client;
 }
 

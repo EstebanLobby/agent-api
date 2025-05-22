@@ -1,8 +1,7 @@
-const getPath = (route: { path: string } | undefined): string => {
+// src/helpers/get-path.ts
+export const getPath = (route: { path: string } | undefined): string => {
   if (!route) {
-    throw new Error('Invalid route object'); // O devuelve una ruta por defecto
+    throw new Error('Invalid route object');
   }
   return route.path;
 };
-
-export default getPath;

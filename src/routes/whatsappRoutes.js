@@ -117,6 +117,6 @@ router.get("/status", authMiddleware, verificarEstado);
  */
 router.post("/start", authMiddleware, iniciarSesion);
 
-router.get("/sesiones", authMiddleware, roleMiddleware(['admin', 'owner']), obtenerSesiones);
+router.get("/sesiones", authMiddleware, roleMiddleware(['admin', 'owner', 'member']), obtenerSesiones);
 
 module.exports = router;
