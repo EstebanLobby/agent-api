@@ -17,6 +17,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { Controller, useForm } from 'react-hook-form';
 import { z as zod } from 'zod';
+import { useAppSelector } from '@/store';
 
 import { paths } from '@/paths';
 import { authClient } from '@/lib/auth/auth-client';
@@ -45,6 +46,7 @@ const defaultValues = {
 export function SignUpForm(): React.JSX.Element {
   const router = useRouter();
   const [isPending, setIsPending] = React.useState<boolean>(false);
+  const user = useAppSelector((state) => state.user.user);
 
   const {
     control,
@@ -60,8 +62,20 @@ export function SignUpForm(): React.JSX.Element {
       try {
         const result = await authClient.signUp(values);
         if (result.data) {
-          // Registro y login exitosos
-          router.push('/dashboard/integrations');
+          // Redirigir según el rol del usuario
+          switch (user?.role.name) {
+            case 'member':
+              router.push('/dashboard/integrations');
+              break;
+            case 'owner':
+              router.push('/dashboard/users');
+              break;
+            case 'admin':
+              router.push('/dashboard/customers');
+              break;
+            default:
+              router.push('/dashboard/integrations');
+          }
         } else if (result.error) {
           setError('root', { type: 'server', message: result.error });
         }
@@ -71,7 +85,7 @@ export function SignUpForm(): React.JSX.Element {
         setIsPending(false);
       }
     },
-    [router, setError],
+    [router, setError, user],
   );
 
   return (

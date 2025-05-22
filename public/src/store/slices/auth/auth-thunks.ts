@@ -11,7 +11,7 @@ import * as authService from '../../../lib/auth/auth-service';
 import { authStorage } from '@/lib/auth/auth-storage';
 import { createLogger } from '@/lib/logger';
 import { refetchUser } from '../user/user-thunks';
-import { setCurrentUser } from '../user/user-slice';
+import { setUser } from '../user/user-slice';
 import { api } from '@/lib/api';
 
 const logger = createLogger({ prefix: '[AuthThunks]' });
@@ -32,7 +32,7 @@ export const signIn = createAsyncThunk<
     logger.debug('Login exitoso, guardando token...');
     authStorage.setToken(token);
     dispatch(authenticateSuccess({ token }));
-    dispatch(setCurrentUser(user));
+    dispatch(setUser(user));
     
     logger.debug('Token guardado y estado actualizado');
   } catch (error) {
@@ -57,7 +57,7 @@ export const signUp = createAsyncThunk<
 
     authStorage.setToken(token);
     dispatch(authenticateSuccess({ token }));
-    dispatch(setCurrentUser(user));
+    dispatch(setUser(user));
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Error en el registro';
     dispatch(authenticateFailure(message));
@@ -76,7 +76,7 @@ export const signOut = createAsyncThunk<void, void, { dispatch: AppDispatch; sta
       logger.debug('Limpiando estado de Redux...');
       await Promise.all([
         dispatch(logout()),
-        dispatch(setCurrentUser(null))
+        dispatch(setUser(null))
       ]);
       
       // 2. Luego limpiamos el almacenamiento local
@@ -111,7 +111,7 @@ export const signOut = createAsyncThunk<void, void, { dispatch: AppDispatch; sta
       localStorage.removeItem('redux_state');
       await Promise.all([
         dispatch(logout()),
-        dispatch(setCurrentUser(null))
+        dispatch(setUser(null))
       ]);
       window.location.href = '/auth/sign-in';
     }
@@ -134,14 +134,14 @@ export const restoreSession = createAsyncThunk('auth/restoreSession', async (_, 
     logger.debug('Perfil de usuario obtenido:', user);
     
     dispatch(authenticateSuccess({ token }));
-    dispatch(setCurrentUser(user));
+    dispatch(setUser(user));
     
     return user;
   } catch (error) {
     logger.error('Error al restaurar sesión:', error);
     authStorage.clearAuth();
     dispatch(logout());
-    dispatch(setCurrentUser(null));
+    dispatch(setUser(null));
     throw error;
   } finally {
     dispatch(setInitialized());

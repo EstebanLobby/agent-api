@@ -15,7 +15,7 @@ import { createLogger } from '@/lib/logger';
 
 const logger = createLogger({ prefix: '[UserSlice]' });
 
-export interface UserState {
+interface UserState {
   user: User | null;
   error: string | null;
   isLoading: boolean;
@@ -49,7 +49,7 @@ const userSlice = createSlice({
   name: 'user',
   initialState,
   reducers: {
-    setCurrentUser: (state, action: PayloadAction<User | null>) => {
+    setUser: (state, action: PayloadAction<User | null>) => {
       logger.debug('Actualizando usuario en el estado:', action.payload);
       state.user = action.payload;
       state.error = null;
@@ -66,6 +66,12 @@ const userSlice = createSlice({
     resetCreateStatus: (state) => {
       state.createError = null;
       state.createSuccess = false;
+    },
+    setLoading: (state, action: PayloadAction<boolean>) => {
+      state.isLoading = action.payload;
+    },
+    setError: (state, action: PayloadAction<string | null>) => {
+      state.error = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -176,5 +182,5 @@ const userSlice = createSlice({
   },
 });
 
-export const { setCurrentUser, logout, resetUpdateStatus, resetCreateStatus } = userSlice.actions;
+export const { setUser, logout, resetUpdateStatus, resetCreateStatus, setLoading, setError } = userSlice.actions;
 export default userSlice.reducer;

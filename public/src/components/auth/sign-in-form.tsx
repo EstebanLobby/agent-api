@@ -5,8 +5,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Box, Button, TextField, Link, Alert, CircularProgress } from '@mui/material';
-import { useAppDispatch, useAppSelector } from '../../store';
-import { signIn } from '../../store/slices/auth/auth-thunks';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { signIn } from '@/store/slices/auth/auth-thunks';
 
 // Esquema de validación extendido
 const loginSchema = z.object({
@@ -23,6 +23,7 @@ export function SignInForm() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { isLoading, error } = useAppSelector((state) => state.auth);
+  const user = useAppSelector((state) => state.user.user);
 
   const {
     register,
@@ -44,7 +45,21 @@ export function SignInForm() {
 
       if (signIn.fulfilled.match(resultAction)) {
         reset(); // Limpiar formulario
-        router.push('/dashboard'); // Redirigir solo si el login fue exitoso
+        
+        // Redirigir según el rol del usuario
+        switch (user?.role.name) {
+          case 'member':
+            router.push('/dashboard/integrations');
+            break;
+          case 'owner':
+            router.push('/dashboard/users');
+            break;
+          case 'admin':
+            router.push('/dashboard/customers');
+            break;
+          default:
+            router.push('/dashboard/integrations');
+        }
       }
     } catch (err) {
       // El error ya está manejado por el thunk y se muestra desde el estado
