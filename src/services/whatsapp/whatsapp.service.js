@@ -129,21 +129,94 @@ async function iniciarCliente(userId, numero) {
 // Función para verificar el estado real de una sesión
 async function verificarEstadoSesion(userId) {
   try {
-    const session = await Session.findOne({ userId });
-    if (!session) return { status: "not_found", isActive: false };
+    // Validar y normalizar el ID
+    if (!userId) {
+      console.error('❌ userId es undefined o null');
+      return { status: "error", isActive: false };
+    }
 
-    const client = getClient(userId);
-    // Verificamos si el cliente existe y está en memoria
-    const isActive = !!client;
+    // Asegurarnos de que userId sea un string válido
+    let userIdStr;
+    if (typeof userId === 'object') {
+      if (userId._id) {
+        userIdStr = userId._id.toString();
+      } else if (userId.id) {
+        userIdStr = userId.id.toString();
+      } else {
+        console.error('❌ Formato de userId no válido:', userId);
+        return { status: "error", isActive: false };
+      }
+    } else {
+      userIdStr = userId.toString();
+    }
+
+    // Verificar que el ID es válido
+    if (!userIdStr || userIdStr.length !== 24) {
+      console.error('❌ ID de usuario no válido:', userIdStr);
+      return { status: "error", isActive: false };
+    }
+    
+    console.log('🔍 Verificando estado de sesión para userId:', userIdStr);
+    
+    // Primero verificar si hay un cliente activo en memoria
+    const client = global.clients[userIdStr];
+    if (client && client.pupPage) {
+      console.log('✅ Cliente encontrado en memoria y activo');
+      return {
+        status: "connected",
+        isActive: true,
+        numero: client.info?.wid?.user || "desconocido",
+        lastUpdate: new Date()
+      };
+    }
+
+    // Si no hay cliente en memoria, verificar en la base de datos
+    const session = await Session.findOne({ userId: userIdStr });
+    if (!session) {
+      console.log('❌ No se encontró sesión para userId:', userIdStr);
+      return { status: "not_found", isActive: false };
+    }
+
+    // Si la sesión está marcada como conectada pero no hay cliente en memoria,
+    // intentar reconectar
+    if (session.status === "connected") {
+      console.log(`🔄 Sesión marcada como conectada pero cliente no en memoria para ${userIdStr}, intentando reconectar...`);
+      try {
+        await iniciarCliente(userIdStr, session.numero);
+        return {
+          status: "reconnecting",
+          isActive: false,
+          numero: session.numero,
+          lastUpdate: session.updatedAt
+        };
+      } catch (error) {
+        console.error(`❌ Error al intentar reconectar: ${error}`);
+        await Session.findOneAndUpdate(
+          { userId: userIdStr },
+          { status: "disconnected", updatedAt: new Date() }
+        );
+        return { status: "disconnected", isActive: false };
+      }
+    }
 
     return {
       status: session.status,
-      isActive,
+      isActive: false,
       numero: session.numero,
       lastUpdate: session.updatedAt
     };
   } catch (error) {
     console.error(`❌ Error al verificar estado de sesión para ${userId}:`, error);
+    // Si hay un error pero tenemos un cliente activo en memoria, considerarlo como conectado
+    const client = global.clients[userId];
+    if (client && client.pupPage) {
+      return {
+        status: "connected",
+        isActive: true,
+        numero: client.info?.wid?.user || "desconocido",
+        lastUpdate: new Date()
+      };
+    }
     return { status: "error", isActive: false };
   }
 }
@@ -159,21 +232,89 @@ async function getEstado(userId) {
 }
 
 async function enviarMensaje(userId, destino, mensaje) {
+  let client = null; // Declarar client fuera del try para poder usarlo en el catch
+  
   try {
-    const client = await getClient(userId);
+    // Validar y normalizar el ID
+    if (!userId) {
+      console.error('❌ userId es undefined o null');
+      return { error: "ID de usuario no válido" };
+    }
+
+    // Asegurarnos de que userId sea un string válido
+    let userIdStr;
+    if (typeof userId === 'object') {
+      if (userId._id) {
+        userIdStr = userId._id.toString();
+      } else if (userId.id) {
+        userIdStr = userId.id.toString();
+      } else {
+        console.error('❌ Formato de userId no válido:', userId);
+        return { error: "Formato de usuario no válido" };
+      }
+    } else {
+      userIdStr = userId.toString();
+    }
+
+    // Verificar que el ID es válido
+    if (!userIdStr || userIdStr.length !== 24) {
+      console.error('❌ ID de usuario no válido:', userIdStr);
+      return { error: "ID de usuario no válido" };
+    }
+    
+    console.log('🔍 Verificando cliente para usuario:', userIdStr);
+    client = await getClient(userIdStr);
     
     if (!client) {
-      return { error: "No se encontró un cliente activo para este usuario" };
+      console.log('🔄 Cliente no encontrado, intentando reconectar...');
+      const session = await Session.findOne({ userId: userIdStr });
+      if (session) {
+        client = await iniciarCliente(userIdStr, session.numero);
+      } else {
+        console.error('❌ No se encontró sesión para el usuario:', userIdStr);
+        return { error: "No se encontró un cliente activo para este usuario" };
+      }
+    }
+
+    // Verificar que el cliente está realmente inicializado
+    if (!client.pupPage) {
+      console.error('❌ Cliente no está completamente inicializado');
+      return { error: "La sesión de WhatsApp no está completamente inicializada" };
     }
 
     const numeroFormateado = destino.startsWith('+') ? destino.substring(1) : destino;
     const chatId = `${numeroFormateado}@c.us`;
 
+    console.log('🔍 Intentando enviar mensaje a:', chatId);
     await client.sendMessage(chatId, mensaje);
+    console.log('✅ Mensaje enviado exitosamente');
+    
     return { success: true, message: "Mensaje enviado correctamente" };
   } catch (error) {
     console.error("❌ Error al enviar mensaje:", error);
-    return { error: error.message || "Error al enviar mensaje" };
+    
+    // Si el error es de WidFactory o el cliente no está inicializado, intentar reinicializar
+    if (error.message?.includes('WidFactory') || (client && !client.pupPage)) {
+      console.log('🔄 Intentando reinicializar el cliente...');
+      try {
+        if (client) {
+          await removeClient(userIdStr);
+        }
+        const session = await Session.findOne({ userId: userIdStr });
+        if (session) {
+          await iniciarCliente(userIdStr, session.numero);
+          return { 
+            error: "La sesión se ha reiniciado. Por favor, intenta enviar el mensaje nuevamente." 
+          };
+        }
+      } catch (reinitError) {
+        console.error('❌ Error al reinicializar el cliente:', reinitError);
+      }
+    }
+    
+    return { 
+      error: "Error al enviar mensaje. Por favor, intenta escanear el código QR nuevamente." 
+    };
   }
 }
 

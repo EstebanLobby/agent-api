@@ -1,6 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { api } from '@/lib/api';
 import { createLogger } from '@/lib/logger';
+import { whatsappClient } from '@/lib/whatsappApi/whatsapp-api';
 import type { Role, OwnerUser, OwnerUsersResponse } from './role-slice';
 
 const logger = createLogger({ prefix: '[RoleThunks]' });
@@ -76,13 +77,18 @@ export const enviarMensajeWhatsApp = createAsyncThunk<
   async ({ userId, numero, mensaje }, { rejectWithValue }) => {
     try {
       logger.debug('Enviando mensaje de WhatsApp:', { userId, numero, mensaje });
-      const response = await api.post<{ success: boolean; message: string }>('/admin/whatsapp/send-as-user', {
+      const response = await whatsappClient.sendMessageAsUser({
         userId,
         numero,
         mensaje
       });
-      logger.debug('Mensaje enviado:', response.data);
-      return response.data;
+      
+      if (response.error) {
+        return rejectWithValue(response.error);
+      }
+      
+      logger.debug('Mensaje enviado:', response);
+      return { success: true, message: 'Mensaje enviado exitosamente' };
     } catch (error: any) {
       logger.error('Error al enviar mensaje de WhatsApp:', error);
       return rejectWithValue(error.response?.data?.error || 'Error al enviar mensaje de WhatsApp');

@@ -36,66 +36,86 @@ async function addClient(userId, client) {
 
 // Obtener cliente - primero de memoria, luego intenta inicializar desde DB
 async function getClient(userId) {
-  // Si ya está en memoria, lo devolvemos
-  if (global.clients[userId]) {
-    return global.clients[userId];
-  }
-  
-  // Intentar recuperar de la base de datos
-  const session = await Session.findOne({ 
-    userId, 
-    status: 'connected'
-  });
-  
-  if (!session) {
-    console.log(`No se encontró sesión activa para el usuario: ${userId}`);
-    return null;
-  }
-  
   try {
-    // Intentar inicializar el cliente desde la sesión guardada
-    console.log(`Restaurando cliente para el usuario: ${userId}`);
-    const client = new Client({
-      authStrategy: new LocalAuth({ clientId: session.sessionId }),
-      puppeteer: {
-        headless: true,
-        args: [
-          "--no-sandbox", 
-          "--disable-setuid-sandbox", 
-          "--disable-dev-shm-usage",
-          "--disable-accelerated-2d-canvas",
-          "--no-first-run",
-          "--no-zygote",
-          "--disable-gpu"
-        ],
-      },
+    // Si ya está en memoria, verificar que esté activo
+    if (global.clients[userId]) {
+      const client = global.clients[userId];
+      if (client.pupPage) {
+        return client;
+      } else {
+        console.log(`Cliente en memoria pero no inicializado para ${userId}, removiendo...`);
+        await removeClient(userId);
+      }
+    }
+    
+    // Intentar recuperar de la base de datos
+    const session = await Session.findOne({ 
+      userId, 
+      status: 'connected'
     });
     
-    // Configurar eventos
-    client.on("ready", async () => {
-      console.log(`Cliente restaurado y listo: ${userId}`);
-      await Session.findOneAndUpdate(
-        { userId },
-        { 
-          status: 'connected',
-          updatedAt: new Date()
-        }
-      );
-    });
+    if (!session) {
+      console.log(`No se encontró sesión activa para el usuario: ${userId}`);
+      return null;
+    }
     
-    client.on("disconnected", async (reason) => {
-      console.log(`Cliente desconectado: ${userId}, razón: ${reason}`);
+    try {
+      // Intentar inicializar el cliente desde la sesión guardada
+      console.log(`Restaurando cliente para el usuario: ${userId}`);
+      const client = new Client({
+        authStrategy: new LocalAuth({ clientId: session.sessionId }),
+        puppeteer: {
+          headless: true,
+          args: [
+            "--no-sandbox", 
+            "--disable-setuid-sandbox", 
+            "--disable-dev-shm-usage",
+            "--disable-accelerated-2d-canvas",
+            "--no-first-run",
+            "--no-zygote",
+            "--disable-gpu",
+            "--disable-extensions"
+          ],
+          executablePath: process.env.CHROME_PATH || undefined,
+          timeout: 60000
+        },
+      });
+      
+      // Configurar eventos
+      client.on("ready", async () => {
+        console.log(`Cliente restaurado y listo: ${userId}`);
+        await Session.findOneAndUpdate(
+          { userId },
+          { 
+            status: 'connected',
+            updatedAt: new Date()
+          }
+        );
+      });
+      
+      client.on("disconnected", async (reason) => {
+        console.log(`Cliente desconectado: ${userId}, razón: ${reason}`);
+        await removeClient(userId);
+      });
+      
+      // Inicializar el cliente
+      await client.initialize();
+      
+      // Verificar que el cliente se inicializó correctamente
+      if (!client.pupPage) {
+        throw new Error('Cliente no se inicializó correctamente');
+      }
+      
+      // Guardar en memoria
+      global.clients[userId] = client;
+      return client;
+    } catch (error) {
+      console.error(`Error al restaurar cliente: ${userId}`, error);
       await removeClient(userId);
-    });
-    
-    // Inicializar el cliente
-    await client.initialize();
-    
-    // Guardar en memoria
-    global.clients[userId] = client;
-    return client;
+      return null;
+    }
   } catch (error) {
-    console.error(`Error al restaurar cliente: ${userId}`, error);
+    console.error(`Error en getClient para ${userId}:`, error);
     return null;
   }
 }

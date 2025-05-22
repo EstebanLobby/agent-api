@@ -132,35 +132,56 @@ const obtenerSesiones = async (req, res) => {
 // 🔹 Enviar mensaje desde una sesión activa
 const enviarMensajeWhatsApp = async (req, res) => {
   try {
-    const clients = global.clients
-
-    console.log('clientes',clients)
-    
-    const { destino, mensaje, sessionId } = req.body;
+    const { destino, mensaje } = req.body;
     if (!destino || !mensaje) {
       return res.status(400).json({ error: "Destino y mensaje son requeridos" });
     }
 
-    const userId = req.user._id || req.user;
-    const userRole = req.user.role.name;
-
-    let targetUserId = userId;
-    
-    // Si es admin y proporciona un sessionId, usar esa sesión
-    if (userRole === 'admin' && sessionId) {
-      const session = await Session.findById(sessionId);
-      if (!session) {
-        return res.status(404).json({ error: "Sesión no encontrada" });
-      }
-      // Verificar que la sesión esté realmente activa
-      const estado = await verificarEstadoSesion(session.userId);
-      if (!estado.isActive) {
-        return res.status(400).json({ error: "La sesión no está activa" });
-      }
-      targetUserId = session.userId;
+    // Extraer el ID del usuario de manera segura
+    let userId;
+    if (req.user._id) {
+      userId = req.user._id.toString();
+    } else if (req.user.id) {
+      userId = req.user.id.toString();
+    } else if (typeof req.user === 'string') {
+      userId = req.user;
+    } else {
+      console.error('❌ Formato de usuario no válido:', req.user);
+      return res.status(400).json({ error: "Error en el formato del usuario" });
     }
 
-    const respuesta = await enviarMensaje(targetUserId, destino, mensaje);
+    console.log('🔍 Usuario completo:', req.user);
+    console.log('🔍 ID extraído:', userId);
+    
+    // Verificar que el ID es válido
+    if (!userId || userId.length !== 24) {
+      console.error('❌ ID de usuario no válido:', userId);
+      return res.status(400).json({ error: "ID de usuario no válido" });
+    }
+
+    // Verificar estado de la sesión
+    const estadoSesion = await verificarEstadoSesion(userId);
+    console.log('🔍 Estado de sesión:', estadoSesion);
+    
+    // Si el estado es error pero tenemos una sesión en la base de datos, intentar usar esa
+    if (estadoSesion.status === 'error') {
+      const session = await Session.findOne({ userId });
+      if (session) {
+        console.log('🔄 Intentando usar sesión existente:', session);
+        const respuesta = await enviarMensaje(userId, destino, mensaje);
+        if (respuesta.success) {
+          return res.json(respuesta);
+        }
+      }
+    }
+
+    if (!estadoSesion.isActive) {
+      return res.status(400).json({ 
+        error: "No hay una sesión activa de WhatsApp. Por favor, escanea el código QR primero." 
+      });
+    }
+
+    const respuesta = await enviarMensaje(userId, destino, mensaje);
     
     if (respuesta.error) {
       console.error(`❌ Error al enviar mensaje: ${respuesta.error}`);

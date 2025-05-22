@@ -9,6 +9,7 @@ import { api } from '@/lib/api';
 
 class WhatsAppClient {
   private static readonly BASE_PATH = '/whatsapp';
+  private static readonly ADMIN_PATH = '/admin/whatsapp';
 
   /**
    * Obtiene el código QR en base64 para conectar WhatsApp.
@@ -41,6 +42,21 @@ class WhatsAppClient {
   }
 
   /**
+   * Verifica el estado de la sesión actual.
+   */
+  async checkCurrentSession(): Promise<{ isActive: boolean; error?: string }> {
+    try {
+      const { data } = await api.get<{ status: string }>(`${WhatsAppClient.BASE_PATH}/status`);
+      return { isActive: data.status === 'connected' };
+    } catch (error: any) {
+      return {
+        isActive: false,
+        error: error.response?.data?.message || 'Error verificando estado de la sesión'
+      };
+    }
+  }
+
+  /**
    * Envía un mensaje de WhatsApp.
    */
   async sendMessage(params: {
@@ -49,6 +65,14 @@ class WhatsAppClient {
     sessionId?: string;
   }): Promise<{ success?: boolean; error?: string }> {
     try {
+      // Verificar estado de la sesión antes de enviar
+      const sessionStatus = await this.checkCurrentSession();
+      if (!sessionStatus.isActive) {
+        return {
+          error: 'No hay una sesión activa de WhatsApp. Por favor, escanea el código QR primero.'
+        };
+      }
+
       const response = await api.post<{ success: boolean }>(
         `${WhatsAppClient.BASE_PATH}/send`,
         params,
@@ -85,6 +109,27 @@ class WhatsAppClient {
     } catch (error: any) {
       return {
         error: error.response?.data?.message || 'Error obteniendo sesiones',
+      };
+    }
+  }
+
+  /**
+   * Envía un mensaje de WhatsApp como otro usuario (solo para admin/owner).
+   */
+  async sendMessageAsUser(params: {
+    userId: string;
+    numero: string;
+    mensaje: string;
+  }): Promise<{ success?: boolean; error?: string }> {
+    try {
+      const response = await api.post<{ success: boolean }>(
+        `${WhatsAppClient.ADMIN_PATH}/send-as-user`,
+        params,
+      );
+      return { success: response.data.success };
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.error || 'Error enviando mensaje como usuario',
       };
     }
   }
