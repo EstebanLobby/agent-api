@@ -14,8 +14,8 @@ const adminOrOwnerMiddleware = roleMiddleware(["admin", "owner"]);
 /**
  * @swagger
  * tags:
- *   name: Admin WhatsApp
- *   description: API para administrar conexiones de WhatsApp
+ *   name: Admin - Owner WhatsApp
+ *   description: Gestión avanzada de WhatsApp para administradores y propietarios
  */
 
 /**
@@ -23,7 +23,8 @@ const adminOrOwnerMiddleware = roleMiddleware(["admin", "owner"]);
  * /api/admin/whatsapp/sessions:
  *   get:
  *     summary: Obtiene todas las sesiones activas de WhatsApp
- *     tags: [Admin WhatsApp]
+ *     tags: [Admin - Owner WhatsApp]
+ *     x-roles: ['admin', 'owner']
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -39,7 +40,8 @@ router.get("/sessions", authMiddleware, adminOrOwnerMiddleware, obtenerSesionesA
  * /api/admin/whatsapp/send-as-user:
  *   post:
  *     summary: Envía un mensaje usando la conexión de otro usuario
- *     tags: [Admin WhatsApp]
+ *     tags: [Admin - Owner WhatsApp]
+ *     x-roles: ['admin', 'owner']
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -67,7 +69,8 @@ router.post("/send-as-user", authMiddleware, adminOrOwnerMiddleware, enviarMensa
  * /api/admin/whatsapp/status/{userId}:
  *   get:
  *     summary: Obtiene el estado de conexión de un usuario específico
- *     tags: [Admin WhatsApp]
+ *     tags: [Admin - Owner WhatsApp]
+ *     x-roles: ['admin', 'owner']
  *     security:
  *       - bearerAuth: []
  *     parameters:

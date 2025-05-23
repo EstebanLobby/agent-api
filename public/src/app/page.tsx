@@ -23,11 +23,11 @@ export default function Page() {
           break;
         default:
           // Si no tiene rol definido, redirigir a login
-          router.push('/auth/login');
+          router.push('/auth/sign-in');
       }
     } else {
       // Si no hay usuario, redirigir a login
-      router.push('/auth/login');
+      router.push('/auth/sign-in');
     }
   }, [user, router]);
 

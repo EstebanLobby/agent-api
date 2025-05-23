@@ -17,106 +17,164 @@ const router = express.Router();
  *   description: API para interactuar con WhatsApp
  */
 
-// �� Obtener código QR
 /**
  * @swagger
- * /api/whatsapp/qr:
- *   get:
- *     summary: Obtiene el código QR para conectar WhatsApp
- *     tags: [WhatsApp]
- *     responses:
- *       200:
- *         description: Código QR en formato base64
- *       400:
- *         description: QR aún no disponible
- *       500:
- *         description: Error generando QR
- */
-router.get("/qr", authMiddleware, obtenerQR); // 🔐 Protegida
-
-// 🔹 Enviar mensaje de WhatsApp
-/**
- * @swagger
- * /api/whatsapp/send:
+ * /api/whatsapp/start:
  *   post:
- *     summary: Envía un mensaje de WhatsApp
+ *     summary: Inicia una sesión de WhatsApp
  *     tags: [WhatsApp]
+ *     security:
+ *       - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - numero
  *             properties:
  *               numero:
  *                 type: string
+ *                 description: Número de WhatsApp con código de país
  *                 example: "+5491123456789"
- *               mensaje:
- *                 type: string
- *                 example: "Hola, este es un mensaje de prueba"
  *     responses:
  *       200:
- *         description: Mensaje enviado exitosamente
+ *         description: Sesión iniciada correctamente
  *       400:
- *         description: Número y mensaje son requeridos
+ *         description: Número de WhatsApp requerido
+ *       401:
+ *         description: No autorizado
  *       500:
- *         description: Error enviando mensaje
+ *         description: Error al iniciar sesión
  */
-router.post("/send", authMiddleware, enviarMensajeWhatsApp);
+router.post("/start", authMiddleware, iniciarSesion);
 
-// 🔹 Verificar estado de conexión
 /**
  * @swagger
- * /api/whatsapp/status:
+ * /api/whatsapp/qr:
  *   get:
- *     summary: Verifica el estado de conexión de WhatsApp
+ *     summary: Obtiene el código QR para conectar WhatsApp
  *     tags: [WhatsApp]
+ *     security:
+ *       - BearerAuth: []
  *     responses:
  *       200:
- *         description: Estado actual de la conexión
+ *         description: Código QR en formato base64
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 qr:
+ *                   type: string
+ *                   description: Código QR en formato base64
+ *       400:
+ *         description: QR aún no disponible
+ *       401:
+ *         description: No autorizado
  *       500:
- *         description: No se pudo obtener el estado
+ *         description: Error generando QR
  */
-
-router.get("/status", authMiddleware, verificarEstado);
+router.get("/qr", authMiddleware, obtenerQR);
 
 /**
  * @swagger
- * /api/whatsapp/start:
+ * /api/whatsapp/send:
  *   post:
- *     summary: Iniciar una sesión de WhatsApp
- *     description: Inicia una nueva sesión de WhatsApp para un número específico.
- *     tags:
- *       - WhatsApp
+ *     summary: Envía un mensaje de WhatsApp
+ *     tags: [WhatsApp]
+ *     security:
+ *       - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
+ *             type: object
+ *             required:
+ *               - destino
+ *               - mensaje
+ *             properties:
+ *               destino:
+ *                 type: string
+ *                 description: Número de destino con código de país
+ *                 example: "+5491123456789"
+ *               mensaje:
+ *                 type: string
+ *                 description: Mensaje a enviar
  *     responses:
  *       200:
- *         description: Sesión iniciada exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Sesión iniciada para 5491123456789"
+ *         description: Mensaje enviado correctamente
  *       400:
- *         description: Número no proporcionado
+ *         description: Datos inválidos
+ *       401:
+ *         description: No autorizado
+ *       500:
+ *         description: Error al enviar mensaje
+ */
+router.post("/send", authMiddleware, enviarMensajeWhatsApp);
+
+/**
+ * @swagger
+ * /api/whatsapp/status:
+ *   get:
+ *     summary: Verifica el estado de la conexión de WhatsApp
+ *     tags: [WhatsApp]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Estado de la conexión
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 error:
+ *                 status:
  *                   type: string
- *                   example: "Número es requerido"
+ *                   enum: [connected, disconnected, pending]
+ *                 isActive:
+ *                   type: boolean
+ *       401:
+ *         description: No autorizado
+ *       500:
+ *         description: Error al verificar estado
  */
-router.post("/start", authMiddleware, iniciarSesion);
+router.get("/status", authMiddleware, verificarEstado);
 
-router.get("/sesiones", authMiddleware, roleMiddleware(['admin', 'owner', 'member']), obtenerSesiones);
+/**
+ * @swagger
+ * /api/whatsapp/sessions:
+ *   get:
+ *     summary: Obtiene todas las sesiones de WhatsApp
+ *     tags: [WhatsApp]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de sesiones
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   userId:
+ *                     type: string
+ *                   status:
+ *                     type: string
+ *                   numero:
+ *                     type: string
+ *                   updatedAt:
+ *                     type: string
+ *                     format: date-time
+ *       401:
+ *         description: No autorizado
+ *       500:
+ *         description: Error al obtener sesiones
+ */
+router.get("/sessions", authMiddleware, roleMiddleware(['admin']), obtenerSesiones);
 
 module.exports = router;

@@ -12,6 +12,50 @@ const QR_REFRESH_TIME = 30 * 1000;
 
 function iniciarWhatsAppService(socketIo) {
   io = socketIo;
+
+  io.on('connection', (socket) => {
+    console.log('🟢 Usuario conectado a WebSocket:', socket.id);
+
+    socket.on('cancel_qr', async ({ userId }) => {
+      console.log('🛑 Cancelación de QR solicitada para usuario:', userId);
+      
+      // Limpiar el QR del usuario
+      if (qrCodes[userId]) {
+        delete qrCodes[userId];
+      }
+
+      // Obtener el cliente y limpiarlo si existe
+      const client = getClient(userId);
+      if (client) {
+        try {
+          // Eliminar el cliente del manager
+          removeClient(userId);
+          console.log('✅ Cliente WhatsApp eliminado para usuario:', userId);
+        } catch (error) {
+          console.error('❌ Error al eliminar cliente:', error);
+        }
+      }
+
+      // Actualizar la sesión en la base de datos
+      try {
+        await Session.findOneAndUpdate(
+          { userId },
+          { 
+            status: 'disconnected',
+            qrCode: null,
+            updatedAt: new Date()
+          }
+        );
+        console.log('✅ Sesión actualizada en base de datos');
+      } catch (error) {
+        console.error('❌ Error al actualizar sesión:', error);
+      }
+    });
+
+    socket.on('disconnect', () => {
+      console.log('🔴 Usuario desconectado:', socket.id);
+    });
+  });
 }
 
 // Función para restaurar sesiones activas
@@ -231,90 +275,90 @@ async function getEstado(userId) {
   return session ? session.status : "not_found";
 }
 
+// 🛡️ PROTECCIÓN ANTI-SPAM SIN REDIS
 async function enviarMensaje(userId, destino, mensaje) {
-  let client = null; // Declarar client fuera del try para poder usarlo en el catch
+  let client = null;
   
   try {
-    // Validar y normalizar el ID
-    if (!userId) {
-      console.error('❌ userId es undefined o null');
-      return { error: "ID de usuario no válido" };
-    }
-
-    // Asegurarnos de que userId sea un string válido
+    // Tu código de validación original...
     let userIdStr;
     if (typeof userId === 'object') {
-      if (userId._id) {
-        userIdStr = userId._id.toString();
-      } else if (userId.id) {
-        userIdStr = userId.id.toString();
-      } else {
-        console.error('❌ Formato de userId no válido:', userId);
-        return { error: "Formato de usuario no válido" };
-      }
+      userIdStr = userId._id ? userId._id.toString() : userId.id.toString();
     } else {
       userIdStr = userId.toString();
     }
 
-    // Verificar que el ID es válido
-    if (!userIdStr || userIdStr.length !== 24) {
-      console.error('❌ ID de usuario no válido:', userIdStr);
-      return { error: "ID de usuario no válido" };
+    // PROTECCIÓN EN MEMORIA (reemplaza Redis temporalmente)
+    if (!global.limits) global.limits = new Map();
+    
+    const now = Date.now();
+    const userLimits = global.limits.get(userIdStr) || { 
+      last: 0, messages: [] 
+    };
+    
+    // Limpiar mensajes viejos (últimas 24 horas)
+    userLimits.messages = userLimits.messages.filter(t => now - t < 86400000);
+    
+    // VERIFICAR LÍMITES
+    if (now - userLimits.last < 30000) {
+      return { error: "Espera 30 segundos entre mensajes", code: "RATE_LIMITED" };
     }
     
-    console.log('🔍 Verificando cliente para usuario:', userIdStr);
+    if (userLimits.messages.length >= 120) {
+      return { error: "Límite diario alcanzado (120 mensajes)", code: "RATE_LIMITED" };
+    }
+    
+    const hourAgo = now - 3600000;
+    const thisHour = userLimits.messages.filter(t => t > hourAgo);
+    if (thisHour.length >= 30) {
+      return { error: "Límite por hora alcanzado (30 mensajes)", code: "RATE_LIMITED" };
+    }
+
+    console.log('✅ Límites OK - enviando mensaje...');
+
+    // TU CÓDIGO WHATSAPP ORIGINAL
     client = await getClient(userIdStr);
     
     if (!client) {
-      console.log('🔄 Cliente no encontrado, intentando reconectar...');
       const session = await Session.findOne({ userId: userIdStr });
       if (session) {
         client = await iniciarCliente(userIdStr, session.numero);
       } else {
-        console.error('❌ No se encontró sesión para el usuario:', userIdStr);
-        return { error: "No se encontró un cliente activo para este usuario" };
+        return { error: "No se encontró un cliente activo" };
       }
     }
 
-    // Verificar que el cliente está realmente inicializado
     if (!client.pupPage) {
-      console.error('❌ Cliente no está completamente inicializado');
-      return { error: "La sesión de WhatsApp no está completamente inicializada" };
+      return { error: "Sesión no inicializada" };
     }
 
     const numeroFormateado = destino.startsWith('+') ? destino.substring(1) : destino;
     const chatId = `${numeroFormateado}@c.us`;
 
-    console.log('🔍 Intentando enviar mensaje a:', chatId);
     await client.sendMessage(chatId, mensaje);
-    console.log('✅ Mensaje enviado exitosamente');
     
-    return { success: true, message: "Mensaje enviado correctamente" };
-  } catch (error) {
-    console.error("❌ Error al enviar mensaje:", error);
+    // REGISTRAR ÉXITO
+    userLimits.last = now;
+    userLimits.messages.push(now);
+    global.limits.set(userIdStr, userLimits);
     
-    // Si el error es de WidFactory o el cliente no está inicializado, intentar reinicializar
-    if (error.message?.includes('WidFactory') || (client && !client.pupPage)) {
-      console.log('🔄 Intentando reinicializar el cliente...');
-      try {
-        if (client) {
-          await removeClient(userIdStr);
-        }
-        const session = await Session.findOne({ userId: userIdStr });
-        if (session) {
-          await iniciarCliente(userIdStr, session.numero);
-          return { 
-            error: "La sesión se ha reiniciado. Por favor, intenta enviar el mensaje nuevamente." 
-          };
-        }
-      } catch (reinitError) {
-        console.error('❌ Error al reinicializar el cliente:', reinitError);
-      }
-    }
+    console.log(`✅ Mensaje enviado. Total hoy: ${userLimits.messages.length}`);
     
     return { 
-      error: "Error al enviar mensaje. Por favor, intenta escanear el código QR nuevamente." 
+      success: true, 
+      message: "Mensaje enviado correctamente",
+      stats: { enviadosHoy: userLimits.messages.length }
     };
+    
+  } catch (error) {
+    console.error("❌ Error:", error);
+    
+    if (error.message?.includes('WidFactory')) {
+      if (client) await removeClient(userIdStr);
+      return { error: "Sesión reiniciada. Intenta de nuevo." };
+    }
+    
+    return { error: "Error enviando mensaje" };
   }
 }
 

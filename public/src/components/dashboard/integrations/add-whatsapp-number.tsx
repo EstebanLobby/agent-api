@@ -13,6 +13,7 @@ import {
 import { PlugsConnected as ConnectIcon } from '@phosphor-icons/react/dist/ssr/PlugsConnected';
 import { QrCode as QrCodeIcon } from '@phosphor-icons/react/dist/ssr/QrCode';
 import { io, Socket } from 'socket.io-client';
+import { useAppSelector } from '@/store';
 
 import { whatsappClient } from '@/lib/whatsappApi/whatsapp-api';
 
@@ -29,6 +30,7 @@ export function AddWhatsAppNumber({ open, onClose }: AddWhatsAppNumberProps) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const socketRef = useRef<Socket | null>(null);
+  const user = useAppSelector((state) => state.user.user);
 
   // Cleanup function para el socket
   const cleanupSocket = () => {
@@ -207,6 +209,9 @@ export function AddWhatsAppNumber({ open, onClose }: AddWhatsAppNumberProps) {
   };
 
   const handleClose = () => {
+    if (socketRef.current && user?.id) {
+      socketRef.current.emit('cancel_qr', { userId: user.id });
+    }
     cleanupSocket();
     onClose();
   };
